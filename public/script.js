@@ -83,3 +83,32 @@
 
   loadOccupied().then(render);
 })();
+
+// Lightbox de la galería — click para ver la foto en grande
+(function () {
+  const lb = document.getElementById("lightbox");
+  if (!lb) return;
+  const lbImg = lb.querySelector(".lightbox__img");
+  const closeBtn = lb.querySelector(".lightbox__close");
+
+  function open(src, alt) {
+    lbImg.src = src;
+    lbImg.alt = alt || "";
+    lb.classList.add("is-open");
+    lb.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+  function close() {
+    lb.classList.remove("is-open");
+    lb.setAttribute("aria-hidden", "true");
+    lbImg.src = "";
+    document.body.style.overflow = "";
+  }
+
+  document.querySelectorAll(".gallery img").forEach((img) => {
+    img.addEventListener("click", () => open(img.src, img.alt));
+  });
+  closeBtn.addEventListener("click", close);
+  lb.addEventListener("click", (e) => { if (e.target === lb) close(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+})();
