@@ -112,6 +112,7 @@ Después abrir http://localhost:8791
 - Cambiar ADMIN_PASSWORD cuando quiera (editar env en Easypanel + redeploy).
 
 ## Log
+- 2026-09-07: Retoques post-deploy: menú a 4 botones (Galería, Precios, Disponibilidad, Consultar), capacidad "15 personas" (antes 15/20), mapa con coords exactas + link corto maps.app.goo.gl/NPRU7kQhGvFF2T6L8, badge "verificado en Espacio Quintas" (hero + contacto), galería ampliada con TODAS las fotos de la carpeta y nueva sección de 4 videos (public/videos/). Redeploy + verificado en vivo.
 - 2026-09-07: Inicio del proyecto. Plan definido. Arranca paso 1.
 - 2026-09-07: Pasos 1 y 2 hechos: landing page + calendario público funcional. Falta backend (paso 3).
 - 2026-09-07: Integradas 9 fotos reales (Desktop/quinta). Nueva sección "Galería". Hero con pileta. Verificado: todos los assets sirven 200. Sigue backend + panel admin.
