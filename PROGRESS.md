@@ -39,7 +39,7 @@ disponibilidad** (fechas ocupadas) que administra Lautaro desde un panel con con
 4. [HECHO] Backend + API (Express: GET/POST /api/occupied, servir /public)
 5. [HECHO] Panel admin con login (public/admin.html + auth por contraseña)
 6. [HECHO] Ajustes finos (favicon 🏡, og:image=hero, theme-color, twitter card)
-7. [ ] Deploy en VPS (Easypanel en Hostinger — ver sección "Deploy")
+7. [HECHO] Deploy en VPS (Easypanel en Hostinger) — ONLINE ✅
 
 ## Archivos creados
 - PROGRESS.md
@@ -88,8 +88,32 @@ Después abrir http://localhost:8791
 - Definir método de deploy (GitHub vs manual) y dominio.
 - (Opcional) revisar textos/precios finales antes de publicar.
 
+## Deploy — ESTADO: ONLINE ✅
+- **Web en vivo:** https://quintalaporo.larom.cloud (SSL OK, wildcard *.larom.cloud ya apunta al server)
+- **URL alternativa Easypanel:** https://larom-quinta.0ptqum.easypanel.host
+- **GitHub (público):** https://github.com/romero0710/quinta-laporo
+- **Easypanel:** proyecto `larom`, servicio `quinta` (app)
+    - Fuente: Git (repo público, rama `main`, ruta `/`)
+    - Build: Dockerfile
+    - Env: ADMIN_PASSWORD=Tatata1208, PORT=3000
+    - Volumen persistente: `data` → `/app/data` (las fechas ocupadas sobreviven redeploys)
+    - Dominios: ambos apuntan al puerto interno 3000
+- **Verificado end-to-end:** landing 200, /admin.html 200, /api/occupied OK,
+  login correcto 200 / incorrecto 401, escritura+lectura+persistencia de fechas OK, imágenes 200.
+
+### Cómo actualizar la web a futuro
+1. Cambiar archivos en `quinta-laporo/` y `git push` a GitHub (rama main).
+2. En Easypanel → proyecto larom → servicio quinta → botón "Implementar" (redeploy).
+   (Opcional: configurar auto-deploy por webhook para que se publique solo con el push.)
+
+### Pendientes de seguridad (para Lautaro)
+- Revocar/regenerar el token de GitHub que se pegó en el chat.
+- Cambiar la clave de Easypanel que se pegó en el chat.
+- Cambiar ADMIN_PASSWORD cuando quiera (editar env en Easypanel + redeploy).
+
 ## Log
 - 2026-09-07: Inicio del proyecto. Plan definido. Arranca paso 1.
 - 2026-09-07: Pasos 1 y 2 hechos: landing page + calendario público funcional. Falta backend (paso 3).
 - 2026-09-07: Integradas 9 fotos reales (Desktop/quinta). Nueva sección "Galería". Hero con pileta. Verificado: todos los assets sirven 200. Sigue backend + panel admin.
+- 2026-09-07: DEPLOY HECHO (paso 7). Repo público en GitHub (romero0710/quinta-laporo), app `quinta` creada en Easypanel (proyecto larom) con fuente Git + Dockerfile, env vars, volumen persistente /app/data y dominio quintalaporo.larom.cloud con SSL. Verificado end-to-end online. PROYECTO COMPLETO.
 - 2026-09-07: Pasos 4, 5, 6 HECHOS. Backend Express + API (GET público, POST con auth Bearer), panel admin con login (contraseña Tatata1208), sanitización/dedup de fechas. Favicon + og:image + theme-color. Test e2e OK (login, auth 401, guardado, static, imágenes 200). Dockerfile + .dockerignore listos. Falta solo el deploy (paso 7).
