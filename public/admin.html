@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Panel — Quinta La Poro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { background: var(--cream-2); }
+    .admin { max-width: 860px; margin: 0 auto; padding: 2rem 1.2rem 4rem; }
+    .admin__head { text-align: center; margin-bottom: 1.5rem; }
+    .admin__head h1 { color: var(--green-dark); font-size: 1.8rem; }
+    .admin__head p { color: var(--muted); }
+    .login { max-width: 360px; margin: 4rem auto; background: #fff; padding: 2rem; border-radius: var(--radius); box-shadow: var(--shadow); text-align: center; }
+    .login h1 { color: var(--green-dark); margin-bottom: 1rem; font-size: 1.5rem; }
+    .login input { width: 100%; padding: 0.8rem 1rem; border: 2px solid #e3dcc9; border-radius: 12px; font-size: 1rem; margin-bottom: 1rem; font-family: var(--font-body); }
+    .login input:focus { outline: none; border-color: var(--green); }
+    .msg { min-height: 1.4rem; font-size: 0.9rem; margin-top: 0.6rem; }
+    .msg--error { color: #c0392b; }
+    .msg--ok { color: var(--green); }
+    .admin__bar { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; align-items: center; margin-top: 1.5rem; }
+    .cal__day { cursor: pointer; user-select: none; transition: transform 0.05s; }
+    .cal__day:not(.cal__day--empty):hover { transform: scale(1.06); outline: 2px solid var(--green); }
+    .hidden { display: none; }
+    .hint { text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 0.8rem; }
+    .pill { background: #fff; border-radius: 999px; padding: 0.4rem 1rem; color: var(--muted); font-size: 0.9rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <section id="login" class="login">
+    <h1>🔒 Panel Quinta La Poro</h1>
+    <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password" />
+    <button type="button" id="loginBtn" class="btn btn--primary" style="width:100%">Entrar</button>
+    <div id="loginMsg" class="msg"></div>
+  </section>
+
+  <!-- PANEL -->
+  <section id="panel" class="admin hidden">
+    <div class="admin__head">
+      <h1>📅 Gestión de disponibilidad</h1>
+      <p>Tocá un día para marcarlo <strong>ocupado</strong>. Tocá de nuevo para liberarlo. No te olvides de <strong>Guardar</strong>.</p>
+    </div>
+
+    <div id="calendar" class="calendar"></div>
+
+    <div class="calendar__legend">
+      <span><i class="dot dot--free"></i> Disponible</span>
+      <span><i class="dot dot--busy"></i> Ocupado</span>
+    </div>
+
+    <div class="admin__bar">
+      <span class="pill" id="counter">0 días ocupados</span>
+      <button type="button" id="saveBtn" class="btn btn--primary">💾 Guardar cambios</button>
+      <button type="button" id="logoutBtn" class="btn btn--ghost">Salir</button>
+    </div>
+    <div id="saveMsg" class="msg" style="text-align:center"></div>
+    <p class="hint">Los cambios se ven en la web pública apenas guardás.</p>
+  </section>
+
+  <script src="admin.js"></script>
+</body>
+</html>
