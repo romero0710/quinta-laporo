@@ -9,6 +9,13 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Tatata1208";
 const DATA_FILE = path.join(__dirname, "data", "occupied.json");
 
 app.use(express.json());
+
+// Seguridad: forzar HTTPS en el navegador (HSTS solo para este host, sin subdominios)
+app.use((req, res, next) => {
+  res.setHeader("Strict-Transport-Security", "max-age=31536000");
+  next();
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 // --- Helpers ---
