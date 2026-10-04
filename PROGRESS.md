@@ -75,7 +75,7 @@ Después abrir http://localhost:8791
   las fechas ocupadas NO se borren en cada redeploy.
 - Variables de entorno a setear en Easypanel:
     - PORT=3000
-    - ADMIN_PASSWORD=Tatata1208  (Lautaro la cambia después)
+    - ADMIN_PASSWORD=<clave del admin>  (solo en Easypanel, nunca en el repo)
 - Puerto interno del contenedor: 3000.
 - Opciones de fuente para Easypanel:
     A) Repo Git (recomendado, redeploy con un push) → hay que crear repo en GitHub.
@@ -95,7 +95,7 @@ Después abrir http://localhost:8791
 - **Easypanel:** proyecto `larom`, servicio `quinta` (app)
     - Fuente: Git (repo público, rama `main`, ruta `/`)
     - Build: Dockerfile
-    - Env: ADMIN_PASSWORD=Tatata1208, PORT=3000
+    - Env: ADMIN_PASSWORD (seteada en Easypanel, no se guarda acá), PORT=3000
     - Volumen persistente: `data` → `/app/data` (las fechas ocupadas sobreviven redeploys)
     - Dominios: ambos apuntan al puerto interno 3000
 - **Verificado end-to-end:** landing 200, /admin.html 200, /api/occupied OK,
@@ -117,4 +117,4 @@ Después abrir http://localhost:8791
 - 2026-09-07: Pasos 1 y 2 hechos: landing page + calendario público funcional. Falta backend (paso 3).
 - 2026-09-07: Integradas 9 fotos reales (Desktop/quinta). Nueva sección "Galería". Hero con pileta. Verificado: todos los assets sirven 200. Sigue backend + panel admin.
 - 2026-09-07: DEPLOY HECHO (paso 7). Repo público en GitHub (romero0710/quinta-laporo), app `quinta` creada en Easypanel (proyecto larom) con fuente Git + Dockerfile, env vars, volumen persistente /app/data y dominio quintalaporo.larom.cloud con SSL. Verificado end-to-end online. PROYECTO COMPLETO.
-- 2026-09-07: Pasos 4, 5, 6 HECHOS. Backend Express + API (GET público, POST con auth Bearer), panel admin con login (contraseña Tatata1208), sanitización/dedup de fechas. Favicon + og:image + theme-color. Test e2e OK (login, auth 401, guardado, static, imágenes 200). Dockerfile + .dockerignore listos. Falta solo el deploy (paso 7).
+- 2026-09-07: Pasos 4, 5, 6 HECHOS. Backend Express + API (GET público, POST con auth Bearer), panel admin con login (contraseña en env ADMIN_PASSWORD), sanitización/dedup de fechas. Favicon + og:image + theme-color. Test e2e OK (login, auth 401, guardado, static, imágenes 200). Dockerfile + .dockerignore listos. Falta solo el deploy (paso 7).
