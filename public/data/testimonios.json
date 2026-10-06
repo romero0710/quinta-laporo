@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "nombre": "Analía M.",
+    "origen": "Reseña de Google",
+    "estrellas": 5,
+    "texto": "Quinta completa para pasar unos cuantos días rodeados de paz, naturaleza, familias y amigos. Completa con todo: cocina, comedor, playroom. Habitaciones con baños, agua caliente en las duchas de 10. Pileta. ¡Sin duda volveremos!"
+  },
+  {
+    "nombre": "Oscar M.",
+    "origen": "Reseña de Google",
+    "estrellas": 5,
+    "texto": "Hermoso lugar, mucha paz, mucho verde, la pileta enorme, cancha de vóley, juegos para chicos, muy cómodas las instalaciones. Recomendable 100 x 100. Gracias Ceci y Rodri, pasamos unos días espectaculares, volveremos sin dudas."
+  },
+  {
+    "nombre": "Claudia A.",
+    "origen": "Reseña de Google",
+    "estrellas": 5,
+    "texto": "Cómoda, amplia... cuartos impecables y confortables... Me encantó el parque, quincho enorme y con todas las comodidades para pasarla genial. Los dueños súper atentos... ¡Para repetir pronto!"
+  },
+  {
+    "nombre": "Marcela V.",
+    "origen": "Reseña de Google",
+    "estrellas": 5,
+    "texto": "La quinta tiene un hermoso parque, casita del árbol para los niños. Los dueños, excelentes anfitriones. La quinta está súper acondicionada. Súper recomendable."
+  },
+  {
+    "nombre": "Viviana D.",
+    "origen": "Reseña de Google",
+    "estrellas": 5,
+    "texto": "Muy lindo lugar. Súper cómodo, con todo lo necesario para pasar unos hermosos días. ¡Seguramente volveremos!"
+  }
+]
