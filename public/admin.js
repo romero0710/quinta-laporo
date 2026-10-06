@@ -30,7 +30,7 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: pass }),
     });
-    return res.ok;
+    return res.status;
   }
 
   async function loadOccupied() {
@@ -50,6 +50,7 @@
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + password },
         body: JSON.stringify({ occupied: [...occupied] }),
       });
+      if (res.status === 429) { saveMsg.textContent = "Demasiados intentos. Probá de nuevo en 15 minutos."; saveMsg.className = "msg msg--error"; return; }
       if (res.status === 401) { saveMsg.textContent = "Sesión vencida, volvé a entrar."; saveMsg.className = "msg msg--error"; return; }
       if (!res.ok) throw new Error();
       saveMsg.textContent = "✅ Guardado con éxito.";
@@ -117,12 +118,15 @@
     if (!pass) return;
     loginMsg.textContent = "Verificando…";
     loginMsg.className = "msg";
-    const ok = await doLogin(pass);
-    if (ok) {
+    const status = await doLogin(pass);
+    if (status === 200) {
       password = pass;
       sessionStorage.setItem(KEY, pass);
       loginMsg.textContent = "";
       enterPanel();
+    } else if (status === 429) {
+      loginMsg.textContent = "Demasiados intentos. Probá de nuevo en 15 minutos.";
+      loginMsg.className = "msg msg--error";
     } else {
       loginMsg.textContent = "Contraseña incorrecta.";
       loginMsg.className = "msg msg--error";
@@ -141,6 +145,6 @@
 
   // Auto-login si ya hay contraseña guardada en la sesión
   if (password) {
-    doLogin(password).then((ok) => { if (ok) enterPanel(); else sessionStorage.removeItem(KEY); });
+    doLogin(password).then((status) => { if (status === 200) enterPanel(); else sessionStorage.removeItem(KEY); });
   }
 })();

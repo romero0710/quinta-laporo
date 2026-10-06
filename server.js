@@ -1,13 +1,22 @@
 try { require("dotenv").config(); } catch (e) { /* dotenv opcional */ }
 const express = require("express");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Tatata1208";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const DATA_FILE = path.join(__dirname, "data", "occupied.json");
 
+// Sin clave configurada no arrancamos: nunca usar una clave por defecto
+if (!ADMIN_PASSWORD) {
+  console.error("Falta la variable de entorno ADMIN_PASSWORD. Configurala antes de arrancar.");
+  process.exit(1);
+}
+
+// Easypanel pone un proxy adelante: confiar en él para obtener la IP real del visitante
+app.set("trust proxy", 1);
 app.use(express.json());
 
 // Seguridad: forzar HTTPS en el navegador (HSTS solo para este host, sin subdominios)
@@ -38,10 +47,48 @@ function writeOccupied(list) {
   return clean;
 }
 
+// Compara en tiempo constante para no filtrar info de la clave por timing
+function passwordMatches(input) {
+  if (typeof input !== "string" || !input) return false;
+  const a = crypto.createHash("sha256").update(input).digest();
+  const b = crypto.createHash("sha256").update(ADMIN_PASSWORD).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
+// Límite de intentos fallidos por IP: 5 cada 15 minutos
+const MAX_FAILS = 5;
+const WINDOW_MS = 15 * 60 * 1000;
+const fails = new Map(); // ip -> { count, resetAt }
+
+function isBlocked(ip) {
+  const entry = fails.get(ip);
+  if (!entry) return false;
+  if (Date.now() > entry.resetAt) {
+    fails.delete(ip);
+    return false;
+  }
+  return entry.count >= MAX_FAILS;
+}
+
+function registerFail(ip) {
+  const entry = fails.get(ip);
+  if (!entry || Date.now() > entry.resetAt) {
+    fails.set(ip, { count: 1, resetAt: Date.now() + WINDOW_MS });
+  } else {
+    entry.count++;
+  }
+}
+
+function tooManyAttempts(res) {
+  return res.status(429).json({ ok: false, error: "Demasiados intentos. Probá de nuevo en 15 minutos." });
+}
+
 function checkAuth(req, res, next) {
+  if (isBlocked(req.ip)) return tooManyAttempts(res);
   const header = req.headers.authorization || "";
   const token = header.replace(/^Bearer\s+/i, "").trim();
-  if (token && token === ADMIN_PASSWORD) return next();
+  if (passwordMatches(token)) return next();
+  registerFail(req.ip);
   return res.status(401).json({ ok: false, error: "No autorizado" });
 }
 
@@ -52,8 +99,13 @@ app.get("/api/occupied", (req, res) => {
 
 // --- API admin ---
 app.post("/api/login", (req, res) => {
+  if (isBlocked(req.ip)) return tooManyAttempts(res);
   const { password } = req.body || {};
-  if (password && password === ADMIN_PASSWORD) return res.json({ ok: true });
+  if (passwordMatches(password)) {
+    fails.delete(req.ip);
+    return res.json({ ok: true });
+  }
+  registerFail(req.ip);
   return res.status(401).json({ ok: false, error: "Contraseña incorrecta" });
 });
 
