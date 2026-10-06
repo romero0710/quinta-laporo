@@ -27,8 +27,8 @@ disponibilidad** (fechas ocupadas) que administra Lautaro desde un panel con con
 - Zona de quintas, segura y tranquila
 
 ## Precios
-- Día de semana: $400.000
-- Fin de semana: $450.000
+- Día de semana: $350.000
+- Fin de semana: $400.000
 - Alquiler por día o pernocte
 - Días festivos: precio aparte, se consulta
 
@@ -112,6 +112,8 @@ Después abrir http://localhost:8791
 - Cambiar ADMIN_PASSWORD cuando quiera (editar env en Easypanel + redeploy).
 
 ## Log
+- 2026-10-06: Nuevas secciones: Reglas de la casa (index.html) y Testimonios (se cargan de public/data/testimonios.json; la sección queda oculta mientras el archivo esté vacío). Formato: [{"nombre","origen","fecha","estrellas","texto"}]. Solo testimonios reales.
+- 2026-10-06: Seguridad: ADMIN_PASSWORD solo por env (sin default), límite de 5 intentos/15 min. Clave cambiada en Easypanel.
 - 2026-09-07: Retoques post-deploy: menú a 4 botones (Galería, Precios, Disponibilidad, Consultar), capacidad "15 personas" (antes 15/20), mapa con coords exactas + link corto maps.app.goo.gl/NPRU7kQhGvFF2T6L8, badge "verificado en Espacio Quintas" (hero + contacto), galería ampliada con TODAS las fotos de la carpeta y nueva sección de 4 videos (public/videos/). Redeploy + verificado en vivo.
 - 2026-09-07: Inicio del proyecto. Plan definido. Arranca paso 1.
 - 2026-09-07: Pasos 1 y 2 hechos: landing page + calendario público funcional. Falta backend (paso 3).

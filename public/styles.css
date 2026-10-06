@@ -252,6 +252,28 @@ h1, h2, h3 { font-family: var(--font-title); font-weight: 600; line-height: 1.15
   .video--vertical { width: clamp(200px, 46%, 260px); }
 }
 
+/* ===== TESTIMONIOS ===== */
+.testimonials { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.4rem; }
+.testimonial {
+  background: #fff; border-radius: var(--radius); padding: 1.8rem;
+  box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 0.8rem;
+}
+.testimonial__stars { color: var(--terra); letter-spacing: 0.1em; }
+.testimonial__text { color: var(--ink); font-style: italic; }
+.testimonial__who { margin-top: auto; color: var(--muted); font-size: 0.9rem; }
+.testimonial__who strong { color: var(--green-dark); }
+
+/* ===== REGLAS ===== */
+.rules { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+.rules li {
+  display: flex; gap: 0.9rem; align-items: flex-start;
+  background: #fff; padding: 1.1rem 1.3rem; border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(44,77,53,0.06);
+}
+.rules li > span { font-size: 1.5rem; line-height: 1.2; }
+.rules strong { color: var(--green-dark); }
+.rules p { color: var(--muted); font-size: 0.95rem; }
+
 /* ===== MAPA ===== */
 .map { border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
 .map iframe { width: 100%; height: 420px; border: 0; display: block; }
