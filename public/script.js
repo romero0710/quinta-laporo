@@ -112,3 +112,32 @@
   lb.addEventListener("click", (e) => { if (e.target === lb) close(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
 })();
+
+// Testimonios — se cargan de data/testimonios.json; si no hay, la sección queda oculta
+(function () {
+  const section = document.getElementById("testimonios");
+  const list = document.getElementById("testimonials");
+  if (!section || !list) return;
+
+  const esc = (t) => String(t || "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+
+  fetch("data/testimonios.json", { cache: "no-store" })
+    .then((res) => (res.ok ? res.json() : []))
+    .then((items) => {
+      if (!Array.isArray(items) || items.length === 0) return;
+      list.innerHTML = items.map((t) => {
+        const n = Math.max(0, Math.min(5, Number(t.estrellas) || 5));
+        const stars = "★".repeat(n) + "☆".repeat(5 - n);
+        const meta = [t.origen, t.fecha].filter(Boolean).map(esc).join(" · ");
+        return `<article class="testimonial">
+          <div class="testimonial__stars" aria-label="${n} de 5 estrellas">${stars}</div>
+          <p class="testimonial__text">“${esc(t.texto)}”</p>
+          <p class="testimonial__who"><strong>${esc(t.nombre)}</strong>${meta ? ` · ${meta}` : ""}</p>
+        </article>`;
+      }).join("");
+      section.hidden = false;
+    })
+    .catch(() => { /* sin testimonios, la sección sigue oculta */ });
+})();
