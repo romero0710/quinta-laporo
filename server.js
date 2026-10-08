@@ -97,6 +97,49 @@ app.get("/api/occupied", (req, res) => {
   res.json({ occupied: readOccupied() });
 });
 
+// Disponibilidad y precio por día, pensado para el bot de WhatsApp/Instagram.
+// GET /api/disponibilidad?desde=2026-11-14&hasta=2026-11-16  (hasta es opcional, máx. 62 días)
+const PRECIOS = { semana: 350000, finde: 400000 };
+const MAX_DIAS = 62;
+const FECHA_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseFecha(str) {
+  if (!FECHA_RE.test(str || "")) return null;
+  const d = new Date(str + "T00:00:00Z");
+  return isNaN(d) || d.toISOString().slice(0, 10) !== str ? null : d;
+}
+
+app.get("/api/disponibilidad", (req, res) => {
+  const desde = parseFecha(req.query.desde);
+  const hasta = req.query.hasta ? parseFecha(req.query.hasta) : desde;
+  if (!desde || !hasta) {
+    return res.status(400).json({ ok: false, error: "Usá desde=AAAA-MM-DD y opcionalmente hasta=AAAA-MM-DD" });
+  }
+  const dias = Math.round((hasta - desde) / 86400000) + 1;
+  if (dias < 1 || dias > MAX_DIAS) {
+    return res.status(400).json({ ok: false, error: `El rango tiene que ser de 1 a ${MAX_DIAS} días` });
+  }
+
+  const ocupadas = new Set(readOccupied());
+  const resultado = [];
+  for (let i = 0; i < dias; i++) {
+    const d = new Date(desde.getTime() + i * 86400000);
+    const fecha = d.toISOString().slice(0, 10);
+    const finde = d.getUTCDay() === 0 || d.getUTCDay() === 6;
+    resultado.push({
+      fecha,
+      disponible: !ocupadas.has(fecha),
+      tipo: finde ? "fin de semana" : "día de semana",
+      precio: finde ? PRECIOS.finde : PRECIOS.semana,
+    });
+  }
+  res.json({
+    ok: true,
+    dias: resultado,
+    nota: "Precio por día o pernocte, hasta 15 personas. Feriados: precio a consultar.",
+  });
+});
+
 // --- API admin ---
 app.post("/api/login", (req, res) => {
   if (isBlocked(req.ip)) return tooManyAttempts(res);
