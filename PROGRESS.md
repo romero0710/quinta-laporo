@@ -30,7 +30,10 @@ disponibilidad** (fechas ocupadas) que administra Lautaro desde un panel con con
 - Día de semana: $350.000
 - Fin de semana: $400.000
 - Alquiler por día o pernocte
-- Días festivos: precio aparte, se consulta
+- Viernes = día de semana. Feriados y puentes = precio de fin de semana (lista en config/feriados.json, actualizar cada año)
+- Pasar el día: incluye hasta 20 personas. Pernocte: incluye hasta 15, máximo 20.
+- Persona extra: $25.000 por persona por día (día: más de 20; pernocte: de 16 a 20)
+- Ingreso desde las 10 h, salida hasta las 20 h. Pet friendly.
 
 ## Plan (pasos)
 1. [HECHO] Scaffold + landing page (public/index.html, styles.css)
@@ -112,6 +115,7 @@ Después abrir http://localhost:8791
 - Cambiar ADMIN_PASSWORD cuando quiera (editar env en Easypanel + redeploy).
 
 ## Log
+- 2026-10-09: API para el bot: GET /api/disponibilidad?desde&hasta&personas&pernocte=si → disponibilidad, tipo de día, precio, adicional por personas extra y total. Feriados en config/feriados.json (NO en data/, que es el volumen de Easypanel y taparía el archivo).
 - 2026-10-06: Nuevas secciones: Reglas de la casa (index.html) y Testimonios (se cargan de public/data/testimonios.json; la sección queda oculta mientras el archivo esté vacío). Formato: [{"nombre","origen","fecha","estrellas","texto"}]. Solo testimonios reales.
 - 2026-10-06: Seguridad: ADMIN_PASSWORD solo por env (sin default), límite de 5 intentos/15 min. Clave cambiada en Easypanel.
 - 2026-09-07: Retoques post-deploy: menú a 4 botones (Galería, Precios, Disponibilidad, Consultar), capacidad "15 personas" (antes 15/20), mapa con coords exactas + link corto maps.app.goo.gl/NPRU7kQhGvFF2T6L8, badge "verificado en Espacio Quintas" (hero + contacto), galería ampliada con TODAS las fotos de la carpeta y nueva sección de 4 videos (public/videos/). Redeploy + verificado en vivo.
