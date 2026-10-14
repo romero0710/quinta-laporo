@@ -90,7 +90,13 @@ function crearRouter({ leerOcupadas }) {
     }
     // Responder enseguida: si Meta no recibe 200 rápido, reintenta.
     res.sendStatus(200);
-    if (!botActivo()) return;
+    const cantidad = (req.body?.entry || []).reduce(
+      (n, e) => n + (e.changes || []).reduce((m, c) => m + (c.value?.messages?.length || 0), 0), 0);
+    if (cantidad) console.log(`[bot] llegaron ${cantidad} mensaje(s) de WhatsApp`);
+    if (!botActivo()) {
+      if (cantidad) console.warn("[bot] inactivo: falta alguna variable (WHATSAPP_*, ANTHROPIC_API_KEY) o BOT_ACTIVO=no");
+      return;
+    }
 
     for (const entry of req.body?.entry || []) {
       for (const change of entry.changes || []) {
