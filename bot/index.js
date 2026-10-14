@@ -86,6 +86,7 @@ function crearRouter({ leerOcupadas }) {
 
   router.post("/webhook/whatsapp", (req, res) => {
     if (!wa.firmaValida(req.rawBody, req.get("X-Hub-Signature-256"))) {
+      console.warn("[bot] aviso de Meta rechazado: la firma no coincide (revisar WHATSAPP_APP_SECRET)");
       return res.sendStatus(401);
     }
     // Responder enseguida: si Meta no recibe 200 rápido, reintenta.
