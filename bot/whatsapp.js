@@ -72,4 +72,36 @@ async function marcarLeido(messageId) {
   }
 }
 
-module.exports = { numeroParaEnviar, configurado, config, firmaValida, enviarTexto, marcarLeido };
+async function graph(metodo, ruta) {
+  const { token } = config();
+  const res = await fetch(`https://graph.facebook.com/${API_VERSION}/${ruta}`, {
+    method: metodo,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error?.message || `HTTP ${res.status}`);
+  return json;
+}
+
+// Al arrancar: revisa que el token y el número sirvan, y suscribe la app a la cuenta de
+// WhatsApp Business (sin esa suscripción Meta no manda los mensajes al webhook).
+async function diagnostico() {
+  const { phoneNumberId } = config();
+  try {
+    const n = await graph("GET", `${phoneNumberId}?fields=display_phone_number,verified_name`);
+    console.log(`[bot] token OK, número ${n.display_phone_number} (${n.verified_name})`);
+  } catch (e) {
+    console.warn("[bot] el token o el WHATSAPP_PHONE_NUMBER_ID no funcionan:", e.message);
+    return;
+  }
+  const waba = process.env.WHATSAPP_WABA_ID;
+  if (!waba) return console.warn("[bot] falta WHATSAPP_WABA_ID: no se puede revisar la suscripción de la app");
+  try {
+    await graph("POST", `${waba}/subscribed_apps`);
+    console.log("[bot] app suscripta a la cuenta de WhatsApp Business: los mensajes deberían llegar");
+  } catch (e) {
+    console.warn("[bot] no se pudo suscribir la app a la cuenta de WhatsApp Business:", e.message);
+  }
+}
+
+module.exports = { diagnostico, numeroParaEnviar, configurado, config, firmaValida, enviarTexto, marcarLeido };

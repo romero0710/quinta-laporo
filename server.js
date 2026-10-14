@@ -140,4 +140,5 @@ app.post("/api/occupied", checkAuth, (req, res) => {
 app.listen(PORT, () => {
   console.log(`Quinta La Poro escuchando en http://localhost:${PORT}`);
   console.log(bot.botActivo() ? "Bot de WhatsApp: activo" : "Bot de WhatsApp: inactivo (faltan variables de entorno o BOT_ACTIVO=no)");
+  if (require("./bot/whatsapp").configurado()) require("./bot/whatsapp").diagnostico();
 });
