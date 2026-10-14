@@ -63,7 +63,7 @@ const TOOLS = [
       required: ["desde", "hasta", "personas", "pernocte"],
       properties: {
         desde: { type: "string", description: "Primera fecha, formato AAAA-MM-DD" },
-        hasta: { type: ["string", "null"], description: "Última fecha (AAAA-MM-DD) si es más de un día; null si es un solo día" },
+        hasta: { type: ["string", "null"], description: "Último día (AAAA-MM-DD), el día de salida. Para dormir es como mínimo el día siguiente a desde; null si es para pasar un solo día" },
         personas: { type: ["integer", "null"], description: "Cantidad de personas; null si todavía no la dijo" },
         pernocte: { type: "boolean", description: "true si se quedan a dormir, false si es para pasar el día" },
       },
