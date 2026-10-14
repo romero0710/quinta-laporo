@@ -115,6 +115,7 @@ Después abrir http://localhost:8791
 - Cambiar ADMIN_PASSWORD cuando quiera (editar env en Easypanel + redeploy).
 
 ## Log
+- 2026-10-14: Bot de WhatsApp con la API oficial de Meta (Cloud API) + Claude. Webhook en /webhook/whatsapp (verificación GET y mensajes POST firmados con el App Secret). Cotiza con la misma lógica de /api/disponibilidad (ahora en lib/precios.js) y avisa a Lauti cuando hay que reservar, visitar, descuentos o dudas. Nunca confirma reservas ni pasa datos bancarios. Se activa solo cuando están las env vars WHATSAPP_* y ANTHROPIC_API_KEY en Easypanel (BOT_ACTIVO=no lo apaga). Conversaciones y avisos en data/bot/ (volumen persistente).
 - 2026-10-09: API para el bot: GET /api/disponibilidad?desde&hasta&personas&pernocte=si → disponibilidad, tipo de día, precio, adicional por personas extra y total. Feriados en config/feriados.json (NO en data/, que es el volumen de Easypanel y taparía el archivo).
 - 2026-10-06: Nuevas secciones: Reglas de la casa (index.html) y Testimonios (se cargan de public/data/testimonios.json; la sección queda oculta mientras el archivo esté vacío). Formato: [{"nombre","origen","fecha","estrellas","texto"}]. Solo testimonios reales.
 - 2026-10-06: Seguridad: ADMIN_PASSWORD solo por env (sin default), límite de 5 intentos/15 min. Clave cambiada en Easypanel.
