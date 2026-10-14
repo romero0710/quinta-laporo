@@ -27,6 +27,13 @@ function firmaValida(rawBody, header) {
   return crypto.timingSafeEqual(Buffer.from(recibido, "utf8"), Buffer.from(esperado, "utf8"));
 }
 
+// En Argentina Meta manda el número del cliente como 549 + área + número, pero para
+// enviarle hay que sacar el 9 (si no, el número de prueba da "not in allowed list").
+function numeroParaEnviar(to) {
+  const n = String(to).replace(/\D/g, "");
+  return /^549\d{10}$/.test(n) ? "54" + n.slice(3) : n;
+}
+
 async function llamar(body) {
   const { token, phoneNumberId } = config();
   const res = await fetch(`https://graph.facebook.com/${API_VERSION}/${phoneNumberId}/messages`, {
@@ -52,7 +59,7 @@ async function enviarTexto(to, texto) {
   }
   if (resto) partes.push(resto);
   for (const parte of partes) {
-    await llamar({ to, type: "text", text: { body: parte, preview_url: true } });
+    await llamar({ to: numeroParaEnviar(to), type: "text", text: { body: parte, preview_url: true } });
   }
 }
 
@@ -65,4 +72,4 @@ async function marcarLeido(messageId) {
   }
 }
 
-module.exports = { configurado, config, firmaValida, enviarTexto, marcarLeido };
+module.exports = { numeroParaEnviar, configurado, config, firmaValida, enviarTexto, marcarLeido };
