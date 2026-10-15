@@ -22,7 +22,7 @@ function getClient() {
 
 // --- Memoria de cada conversación (solo texto; vive en el volumen persistente data/) ---
 function archivoConversacion(waId) {
-  return path.join(CONV_DIR, `${String(waId).replace(/\D/g, "")}.json`);
+  return path.join(CONV_DIR, `${String(waId).replace(/[^a-z0-9_]/gi, "")}.json`);
 }
 
 function leerConversacion(waId) {
@@ -94,7 +94,7 @@ function fechaHoyArgentina() {
   }).format(new Date());
 }
 
-// `ctx` trae: waId, nombre, leerOcupadas(), notificarLauti(texto)
+// `ctx` trae: waId (id de la conversación), canal, contacto, nombre, leerOcupadas(), notificarLauti(aviso)
 async function ejecutarHerramienta(bloque, ctx) {
   const input = bloque.input || {};
   if (bloque.name === "consultar_disponibilidad") {
@@ -110,6 +110,8 @@ async function ejecutarHerramienta(bloque, ctx) {
     const aviso = {
       fecha: new Date().toISOString(),
       waId: ctx.waId,
+      canal: ctx.canal || "WhatsApp",
+      contacto: ctx.contacto || "",
       nombre: ctx.nombre || null,
       motivo: input.motivo,
       resumen: input.resumen,
@@ -132,7 +134,10 @@ async function responder(textosNuevos, ctx) {
   // La API pide que el primer mensaje sea del usuario.
   while (messages.length && messages[0].role !== "user") messages.shift();
   messages.push({ role: "user", content: textoUsuario });
-  messages.push({ role: "system", content: `Hoy es ${fechaHoyArgentina()} (hora de Argentina).${conv.nombre ? ` La persona figura en WhatsApp como "${conv.nombre}".` : ""}` });
+  const canal = ctx.canal || "WhatsApp";
+  messages.push({ role: "system", content: `Hoy es ${fechaHoyArgentina()} (hora de Argentina). La persona escribe por ${canal}.` +
+    (canal === "WhatsApp" ? "" : " Acá no se ve la negrita con asteriscos: escribí texto plano.") +
+    (conv.nombre ? ` Figura como "${conv.nombre}".` : "") });
 
   let respuestaFinal = "";
   for (let vuelta = 0; vuelta < MAX_VUELTAS_HERRAMIENTAS; vuelta++) {
