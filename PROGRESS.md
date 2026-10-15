@@ -21,8 +21,8 @@ disponibilidad** (fechas ocupadas) que administra Lautaro desde un panel con con
 - Ubicación (Google Maps): Quinta La Poro, -34.3857363, -59.1070159
 - Capacidad: 15/20 personas
 - 4 habitaciones (todas con ventilador de techo), 4 baños completos con ducha
-- Quincho: cocina industrial, microondas, heladera, freezer, parrilla, horno de barro
-- Sala de juegos: pool, ping pong, metegol, TV
+- Quincho: cocina industrial, microondas, heladera, freezer, parrilla (sin horno de barro en verano 2026-27)
+- Juegos en el quincho: mesa de pool, metegol, ping pong y TV con Chromecast, sin cable (no es una sala aparte)
 - Predio 2000 m²: pileta 11x5, aro de basquet, cancha de fútbol y vóley, juegos para niños
 - Zona de quintas, segura y tranquila
 
@@ -31,8 +31,10 @@ disponibilidad** (fechas ocupadas) que administra Lautaro desde un panel con con
 - Fin de semana: $400.000
 - Alquiler por día o pernocte
 - Viernes = día de semana. Feriados y puentes = precio de fin de semana (lista en config/feriados.json, actualizar cada año)
+- Navidad (24 al 27 dic) y Año Nuevo (31 dic al 3 ene): solo paquete completo de 4 días a $3.000.000, máximo 20. Incluye 15 durmiendo; de la 16 a la 20 los que duermen pagan $25.000 por día y los que solo pasan el día no pagan extra (API: &duermen=N). Días agregados fuera del paquete se cobran normal. Definido en PAQUETES de lib/precios.js
 - Pasar el día: incluye hasta 20 personas. Pernocte: incluye hasta 15, máximo 20.
 - Persona extra: $25.000 por persona por día (día: más de 20; pernocte: de 16 a 20)
+- Menores de 3 años no pagan el extra por persona, pero cuentan para el máximo (API: &menores3=N)
 - Ingreso desde las 10 h, salida hasta las 20 h. Pet friendly.
 
 ## Plan (pasos)
@@ -56,7 +58,7 @@ disponibilidad** (fechas ocupadas) que administra Lautaro desde un panel con con
     - casa.jpg      (frente de la casa con galería)
     - pileta.jpg    (pileta con casa de fondo — cálida)
     - quincho.jpg   (pool + ping pong)
-    - parrilla.jpg  (parrilla y horno de barro)
+    - parrilla.jpg  (parrilla)
     - parque.jpg    (parque con arcos de fútbol)
     - habitacion.jpg
     - bano.jpg
