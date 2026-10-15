@@ -22,7 +22,7 @@ disponibilidad** (fechas ocupadas) que administra Lautaro desde un panel con con
 - Capacidad: 15/20 personas
 - 4 habitaciones (todas con ventilador de techo), 4 baños completos con ducha
 - Quincho: cocina industrial, microondas, heladera, freezer, parrilla (sin horno de barro en verano 2026-27)
-- Juegos en el quincho: mesa de pool, metegol y ping pong (no es una sala aparte)
+- Juegos en el quincho: mesa de pool, metegol, ping pong y TV con Chromecast, sin cable (no es una sala aparte)
 - Predio 2000 m²: pileta 11x5, aro de basquet, cancha de fútbol y vóley, juegos para niños
 - Zona de quintas, segura y tranquila
 
