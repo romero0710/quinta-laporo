@@ -9,6 +9,8 @@ const meta = require("./meta");
 const agente = require("./agente");
 
 const ESPERA_MS = Number(process.env.BOT_ESPERA_MS || 2500); // junta mensajes seguidos en una sola respuesta
+const MAX_BURBUJAS = 3;
+const PAUSA_BURBUJA_MS = Number(process.env.BOT_PAUSA_BURBUJA_MS || 1200); // pausa entre burbujas, para que se lea natural
 const PAUSA_HUMANO_MS = Number(process.env.BOT_PAUSA_HORAS || 12) * 3600000;
 const vistos = new Set(); // ids ya procesados (Meta puede reenviar el mismo aviso)
 const enviadosPorBot = new Set(); // ids de mensajes que mandó el bot (para distinguirlos de los de Lauti)
@@ -72,6 +74,13 @@ function textoDeMensaje(msg) {
   return null; // audio, imagen, sticker, etc.
 }
 
+// La respuesta viene con las burbujas separadas por una línea en blanco; cada una va como mensaje aparte.
+function separarBurbujas(texto) {
+  const partes = texto.split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean);
+  if (partes.length <= MAX_BURBUJAS) return partes;
+  return [...partes.slice(0, MAX_BURBUJAS - 1), partes.slice(MAX_BURBUJAS - 1).join("\n\n")];
+}
+
 function yaVisto(id) {
   if (!id) return false;
   if (vistos.has(id)) return true;
@@ -106,8 +115,13 @@ async function procesar(convId) {
         notificarLauti,
       });
       if (estaPausado(convId)) return; // Lauti tomó la charla mientras el bot pensaba
-      const ids = await canal.enviar(p.destino, respuesta);
-      for (const id of ids || []) enviadosPorBot.add(id);
+      const burbujas = separarBurbujas(respuesta);
+      for (let i = 0; i < burbujas.length; i++) {
+        if (i > 0) await new Promise((r) => setTimeout(r, PAUSA_BURBUJA_MS));
+        if (estaPausado(convId)) return;
+        const ids = await canal.enviar(p.destino, burbujas[i]);
+        for (const id of ids || []) enviadosPorBot.add(id);
+      }
       if (enviadosPorBot.size > 5000) enviadosPorBot.delete(enviadosPorBot.values().next().value);
     } catch (e) {
       console.error("[bot] error respondiendo a", convId, e);
