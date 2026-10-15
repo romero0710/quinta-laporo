@@ -101,12 +101,14 @@ app.get("/api/occupied", (req, res) => {
 });
 
 // Disponibilidad y precio por día (lo usa también el bot de WhatsApp). Reglas en lib/precios.js.
-// GET /api/disponibilidad?desde=2026-11-14&hasta=2026-11-16&personas=18&pernocte=si
+// GET /api/disponibilidad?desde=2026-11-14&hasta=2026-11-16&personas=18&pernocte=si[&duermen=16][&menores3=1]
 app.get("/api/disponibilidad", (req, res) => {
   const r = calcularDisponibilidad({
     desde: req.query.desde,
     hasta: req.query.hasta,
     personas: req.query.personas,
+    duermen: req.query.duermen,
+    menores3: req.query.menores3,
     pernocte: /^(si|sí|true|1)$/i.test(String(req.query.pernocte || "")),
     ocupadas: readOccupied(),
   });
