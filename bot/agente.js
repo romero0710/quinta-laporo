@@ -60,11 +60,13 @@ const TOOLS = [
     input_schema: {
       type: "object",
       additionalProperties: false,
-      required: ["desde", "hasta", "personas", "pernocte"],
+      required: ["desde", "hasta", "personas", "duermen", "menores3", "pernocte"],
       properties: {
         desde: { type: "string", description: "Primera fecha, formato AAAA-MM-DD" },
         hasta: { type: ["string", "null"], description: "Último día (AAAA-MM-DD), el día de salida. Para dormir es como mínimo el día siguiente a desde; null si es para pasar un solo día" },
-        personas: { type: ["integer", "null"], description: "Cantidad de personas; null si todavía no la dijo" },
+        personas: { type: ["integer", "null"], description: "Cantidad total de personas, bebés incluidos; null si todavía no la dijo" },
+        duermen: { type: ["integer", "null"], description: "Solo para Navidad y Año Nuevo: cuántos de ellos se quedan a dormir; null si duermen todos o no lo dijo" },
+        menores3: { type: ["integer", "null"], description: "Cuántos son menores de 3 años (no pagan adicional); null si no hay o no lo dijo" },
         pernocte: { type: "boolean", description: "true si se quedan a dormir, false si es para pasar el día" },
       },
     },
@@ -102,6 +104,8 @@ async function ejecutarHerramienta(bloque, ctx) {
       desde: input.desde,
       hasta: input.hasta || undefined,
       personas: input.personas ?? undefined,
+      duermen: input.duermen ?? undefined,
+      menores3: input.menores3 ?? undefined,
       pernocte: Boolean(input.pernocte),
       ocupadas: ctx.leerOcupadas(),
     });
