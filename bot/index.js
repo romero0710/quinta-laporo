@@ -114,6 +114,7 @@ async function procesar(convId) {
         leerOcupadas: procesar.leerOcupadas,
         notificarLauti,
       });
+      if (respuesta === null) return; // hoy ya no le contesta (spam o fuera de tema)
       if (estaPausado(convId)) return; // Lauti tomó la charla mientras el bot pensaba
       const burbujas = separarBurbujas(respuesta);
       for (let i = 0; i < burbujas.length; i++) {

@@ -9,6 +9,10 @@ const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
 const EFFORT = process.env.CLAUDE_EFFORT || "low";
 const MAX_TURNOS_GUARDADOS = 40; // turnos de texto que se recuerdan por persona
 const MAX_VUELTAS_HERRAMIENTAS = 6;
+const MAX_TOKENS = 1500; // alcanza para 3 burbujas cortas más las herramientas
+// Freno contra spam o gente que juega con el bot: pasado el límite, el bot se calla en esa charla hasta el día siguiente.
+const LIMITE_DIARIO = Number(process.env.BOT_LIMITE_DIARIO || 30); // mensajes por persona por día
+const AVISO_LIMITE = "Te paso con Lauti, que te escribe en breve 🙌";
 
 const DATA_DIR = path.join(__dirname, "..", "data");
 const CONV_DIR = path.join(DATA_DIR, "bot", "conversaciones");
@@ -87,7 +91,46 @@ const TOOLS = [
       },
     },
   },
+  {
+    name: "cortar_charla",
+    description:
+      "Corta la charla hasta mañana: el bot deja de responderle a esta persona por hoy y se le avisa a Lauti. " +
+      "Usala solo cuando la persona lleva 3 mensajes seguidos que no tienen nada que ver con alquilar la quinta " +
+      "(bromas, insultos, pruebas, pedidos de otras cosas). Una consulta normal, aunque sea rara, no cuenta.",
+    strict: true,
+    input_schema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["resumen"],
+      properties: {
+        resumen: { type: "string", description: "En una línea, qué estuvo escribiendo la persona." },
+      },
+    },
+  },
 ];
+
+function diaArgentina() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date());
+}
+
+async function avisar(ctx, motivo, resumen) {
+  const aviso = {
+    fecha: new Date().toISOString(),
+    waId: ctx.waId,
+    canal: ctx.canal || "WhatsApp",
+    contacto: ctx.contacto || "",
+    nombre: ctx.nombre || null,
+    motivo,
+    resumen,
+  };
+  registrarAviso(aviso);
+  await ctx.notificarLauti(aviso);
+}
+
+// Silencia la charla hasta que cambie el día (hora de Argentina).
+function silenciar(conv, motivo) {
+  conv.limite = { ...(conv.limite || {}), dia: diaArgentina(), silenciado: motivo };
+}
 
 function fechaHoyArgentina() {
   return new Intl.DateTimeFormat("es-AR", {
@@ -111,27 +154,38 @@ async function ejecutarHerramienta(bloque, ctx) {
     });
   }
   if (bloque.name === "avisar_a_lauti") {
-    const aviso = {
-      fecha: new Date().toISOString(),
-      waId: ctx.waId,
-      canal: ctx.canal || "WhatsApp",
-      contacto: ctx.contacto || "",
-      nombre: ctx.nombre || null,
-      motivo: input.motivo,
-      resumen: input.resumen,
-    };
-    registrarAviso(aviso);
-    await ctx.notificarLauti(aviso);
+    await avisar(ctx, input.motivo, input.resumen);
     return { ok: true, mensaje: "Aviso enviado a Lauti." };
+  }
+  if (bloque.name === "cortar_charla") {
+    silenciar(ctx.conv, "fuera de tema");
+    await avisar(ctx, "fuera de tema", `El bot dejó de responderle por hoy. ${input.resumen}`);
+    return { ok: true, mensaje: "Listo: después de esta respuesta no le contestás más por hoy. Despedite en una sola burbuja corta: decile que por acá solo respondés consultas sobre la quinta." };
   }
   return { ok: false, error: `Herramienta desconocida: ${bloque.name}` };
 }
 
-// Recibe uno o más textos nuevos de la persona y devuelve la respuesta del bot.
+// Recibe uno o más textos nuevos de la persona y devuelve la respuesta del bot,
+// o null si hoy el bot ya no le contesta a esta persona.
 async function responder(textosNuevos, ctx) {
   const conv = leerConversacion(ctx.waId);
   if (ctx.nombre) conv.nombre = ctx.nombre;
   const textoUsuario = textosNuevos.join("\n");
+  ctx = { ...ctx, conv };
+
+  const hoy = diaArgentina();
+  if (!conv.limite || conv.limite.dia !== hoy) conv.limite = { dia: hoy, mensajes: 0, silenciado: null };
+  if (conv.limite.silenciado) return null;
+  conv.limite.mensajes = (conv.limite.mensajes || 0) + textosNuevos.length;
+  if (conv.limite.mensajes > LIMITE_DIARIO) {
+    silenciar(conv, "límite de mensajes");
+    conv.turnos.push({ role: "user", text: textoUsuario, ts: new Date().toISOString() });
+    conv.turnos.push({ role: "assistant", text: AVISO_LIMITE, ts: new Date().toISOString() });
+    guardarConversacion(conv);
+    console.log(`[bot] ${ctx.waId} pasó los ${LIMITE_DIARIO} mensajes de hoy: el bot se calla hasta mañana`);
+    await avisar(ctx, "límite de mensajes", `Mandó más de ${LIMITE_DIARIO} mensajes hoy y el bot dejó de responderle hasta mañana. Último: "${textoUsuario.slice(0, 200)}"`);
+    return AVISO_LIMITE;
+  }
 
   // Historial previo solo como texto: no se reenvían bloques de razonamiento entre mensajes.
   const messages = conv.turnos.map((t) => ({ role: t.role, content: t.text }));
@@ -147,7 +201,7 @@ async function responder(textosNuevos, ctx) {
   for (let vuelta = 0; vuelta < MAX_VUELTAS_HERRAMIENTAS; vuelta++) {
     const response = await getClient().beta.messages.create({
       model: MODEL,
-      max_tokens: 4000,
+      max_tokens: MAX_TOKENS,
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       output_config: { effort: EFFORT },
