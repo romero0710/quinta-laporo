@@ -132,6 +132,25 @@ function silenciar(conv, motivo) {
   conv.limite = { ...(conv.limite || {}), dia: diaArgentina(), silenciado: motivo };
 }
 
+// Nota corta de lo que hizo una herramienta. El historial guarda solo texto, así que sin esto
+// en el mensaje siguiente Claude no ve que ya consultó o avisó, y cree que lo inventó.
+function notaDeAccion(bloque, resultado) {
+  const i = bloque.input || {};
+  if (bloque.name === "consultar_disponibilidad") {
+    const pedido = `${i.desde}${i.hasta ? " a " + i.hasta : ""}, ${i.pernocte ? "pernocte" : "día"}` +
+      (i.personas ? `, ${i.personas} personas` : "");
+    if (!resultado || resultado.ok === false) return `consultó disponibilidad (${pedido}): error ${resultado?.error || ""}`.trim();
+    const ocupadas = (resultado.dias || []).filter((d) => !d.disponible).map((d) => d.fecha);
+    return `consultó disponibilidad (${pedido}): ` +
+      (ocupadas.length ? `ocupado ${ocupadas.join(", ")}` : "libre") +
+      (resultado.total ? `, total $${resultado.total.toLocaleString("es-AR")}` : "") +
+      ((resultado.paquetes || []).length ? `, paquete ${resultado.paquetes.map((p) => p.nombre).join(" y ")}` : "");
+  }
+  if (bloque.name === "avisar_a_lauti") return `le avisó a Lauti (motivo: ${i.motivo})`;
+  if (bloque.name === "cortar_charla") return "cortó la charla hasta mañana y le avisó a Lauti";
+  return bloque.name;
+}
+
 function fechaHoyArgentina() {
   return new Intl.DateTimeFormat("es-AR", {
     timeZone: "America/Argentina/Buenos_Aires",
@@ -188,9 +207,16 @@ async function responder(textosNuevos, ctx) {
   }
 
   // Historial previo solo como texto: no se reenvían bloques de razonamiento entre mensajes.
-  const messages = conv.turnos.map((t) => ({ role: t.role, content: t.text }));
-  // La API pide que el primer mensaje sea del usuario.
-  while (messages.length && messages[0].role !== "user") messages.shift();
+  // Lo que hicieron las herramientas va como nota de sistema justo antes de esa respuesta
+  // (la API solo acepta mensajes de sistema después de uno del usuario).
+  const messages = [];
+  for (const t of conv.turnos) {
+    if (!messages.length && t.role !== "user") continue; // la API pide que el primer mensaje sea del usuario
+    if (t.role === "assistant" && t.acciones?.length && messages.at(-1)?.role === "user") {
+      messages.push({ role: "system", content: `Para la respuesta que sigue el bot usó sus herramientas de verdad: ${t.acciones.join("; ")}. Ya está hecho: no lo repitas ni lo desmientas.` });
+    }
+    messages.push({ role: t.role, content: t.text });
+  }
   messages.push({ role: "user", content: textoUsuario });
   const canal = ctx.canal || "WhatsApp";
   messages.push({ role: "system", content: `Hoy es ${fechaHoyArgentina()} (hora de Argentina). La persona escribe por ${canal}.` +
@@ -198,6 +224,7 @@ async function responder(textosNuevos, ctx) {
     (conv.nombre ? ` Figura como "${conv.nombre}".` : "") });
 
   let respuestaFinal = "";
+  const acciones = [];
   for (let vuelta = 0; vuelta < MAX_VUELTAS_HERRAMIENTAS; vuelta++) {
     const response = await getClient().beta.messages.create({
       model: MODEL,
@@ -234,6 +261,7 @@ async function responder(textosNuevos, ctx) {
         console.error("[bot] error en herramienta", bloque.name, e.message);
         resultado = { ok: false, error: "No se pudo completar la consulta" };
       }
+      acciones.push(notaDeAccion(bloque, resultado));
       resultados.push({
         type: "tool_result",
         tool_use_id: bloque.id,
@@ -249,7 +277,7 @@ async function responder(textosNuevos, ctx) {
   }
 
   conv.turnos.push({ role: "user", text: textoUsuario, ts: new Date().toISOString() });
-  conv.turnos.push({ role: "assistant", text: respuestaFinal, ts: new Date().toISOString() });
+  conv.turnos.push({ role: "assistant", text: respuestaFinal, acciones: acciones.length ? acciones : undefined, ts: new Date().toISOString() });
   guardarConversacion(conv);
   return respuestaFinal;
 }
