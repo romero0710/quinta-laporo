@@ -8,7 +8,7 @@ const wa = require("./whatsapp");
 const meta = require("./meta");
 const agente = require("./agente");
 
-const ESPERA_MS = Number(process.env.BOT_ESPERA_MS || 2500); // junta mensajes seguidos en una sola respuesta
+const ESPERA_MS = Number(process.env.BOT_ESPERA_MS || 15000); // junta mensajes seguidos en una sola respuesta (la gente manda 2 o 3 mensajes cortos)
 const MAX_BURBUJAS = 3;
 const PAUSA_BURBUJA_MS = Number(process.env.BOT_PAUSA_BURBUJA_MS || 1200); // pausa entre burbujas, para que se lea natural
 const PAUSA_HUMANO_MS = Number(process.env.BOT_PAUSA_HORAS || 12) * 3600000;
