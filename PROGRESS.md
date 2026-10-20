@@ -32,6 +32,7 @@ disponibilidad** (fechas ocupadas) que administra Lautaro desde un panel con con
 - Alquiler por día o pernocte
 - Viernes = día de semana. Feriados y puentes = precio de fin de semana (lista en config/feriados.json, actualizar cada año)
 - Navidad (24 al 27 dic) y Año Nuevo (31 dic al 3 ene): solo paquete completo de 4 días a $3.000.000, máximo 20. Incluye 15 durmiendo; de la 16 a la 20 los que duermen pagan $25.000 por día y los que solo pasan el día no pagan extra (API: &duermen=N). Días agregados fuera del paquete se cobran normal. Definido en PAQUETES de lib/precios.js
+- Estadías largas (2026-10-20): descuento fijo según el total de días: 3+ $50.000, 7+ $100.000, 10+ $150.000, 15+ $200.000 y $50.000 más cada 5 días. Se resta solo de los días que no son paquete de fiestas (descuentoPorDias en lib/precios.js)
 - Pasar el día: incluye hasta 20 personas. Pernocte: incluye hasta 15, máximo 20.
 - Persona extra: $25.000 por persona por día (día: más de 20; pernocte: de 16 a 20)
 - Menores de 3 años no pagan el extra por persona, pero cuentan para el máximo (API: &menores3=N)
