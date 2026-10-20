@@ -26,6 +26,53 @@
     .hidden { display: none; }
     .hint { text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 0.8rem; }
     .pill { background: #fff; border-radius: 999px; padding: 0.4rem 1rem; color: var(--muted); font-size: 0.9rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .admin--wide { max-width: 1100px; }
+    .tabs { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .tab { border: 2px solid var(--green); background: transparent; color: var(--green-dark); border-radius: 999px; padding: 0.5rem 1.1rem; font: 600 0.95rem var(--font-body); cursor: pointer; }
+    .tab[aria-selected="true"] { background: var(--green); color: #fff; }
+    .tab__badge { background: var(--terra); color: #fff; border-radius: 999px; padding: 0 0.45rem; margin-left: 0.3rem; font-size: 0.8rem; }
+    .chats { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; min-height: 60vh; }
+    .chats__list, .chats__detail { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .chats__list { overflow-y: auto; max-height: 75vh; }
+    .chat-item { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid #eee5d3; background: #fff; padding: 0.8rem 1rem; cursor: pointer; font-family: var(--font-body); }
+    .chat-item:hover, .chat-item[aria-current="true"] { background: var(--cream); }
+    .chat-item__top { display: flex; justify-content: space-between; gap: 0.5rem; font-weight: 700; color: var(--ink); }
+    .chat-item__top time { font-weight: 400; color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
+    .chat-item__text { color: var(--muted); font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 0.2rem; }
+    .tag { display: inline-block; font-size: 0.72rem; font-weight: 700; border-radius: 6px; padding: 0.05rem 0.4rem; margin-right: 0.3rem; background: var(--cream-2); color: var(--green-dark); }
+    .tag--pausa { background: #fde8d8; color: var(--terra-dark); }
+    .chats__detail { display: flex; flex-direction: column; max-height: 75vh; }
+    .detail__head { padding: 0.9rem 1rem; border-bottom: 1px solid #eee5d3; display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; justify-content: space-between; }
+    .detail__head h2 { font-size: 1.1rem; color: var(--green-dark); margin: 0; }
+    .detail__estado { color: var(--muted); font-size: 0.85rem; }
+    .detail__acciones { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .btn--sm { padding: 0.4rem 0.9rem; font-size: 0.85rem; }
+    .mensajes { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; background: var(--cream); }
+    .burbuja { max-width: 78%; padding: 0.55rem 0.8rem; border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.95rem; line-height: 1.35; }
+    .burbuja--cliente { align-self: flex-start; background: #fff; }
+    .burbuja--bot { align-self: flex-end; background: #dcefe1; }
+    .burbuja--lauti { align-self: flex-end; background: #fbe3d3; }
+    .burbuja--no-enviado { opacity: 0.55; border: 1px dashed var(--muted); }
+    .burbuja__meta { display: block; font-size: 0.72rem; color: var(--muted); margin-top: 0.3rem; }
+    .responder { display: flex; gap: 0.5rem; padding: 0.8rem; border-top: 1px solid #eee5d3; }
+    .responder textarea { flex: 1; resize: vertical; min-height: 2.8rem; max-height: 10rem; padding: 0.6rem 0.8rem; border: 2px solid #e3dcc9; border-radius: 12px; font: 1rem var(--font-body); }
+    .responder textarea:focus { outline: none; border-color: var(--green); }
+    .vacio { color: var(--muted); text-align: center; padding: 2rem 1rem; }
+    .avisos { display: flex; flex-direction: column; gap: 0.7rem; }
+    .aviso { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 0.9rem 1.1rem; }
+    .aviso__top { display: flex; justify-content: space-between; gap: 0.5rem; font-weight: 700; color: var(--green-dark); }
+    .aviso__top time { font-weight: 400; color: var(--muted); font-size: 0.85rem; }
+    .aviso p { margin: 0.4rem 0 0; white-space: pre-wrap; }
+    .chat-view { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    [hidden] { display: none !important; }
+    .volver { display: none; }
+    @media (max-width: 760px) {
+      .chats { grid-template-columns: 1fr; }
+      .chats--abierta .chats__list { display: none; }
+      .chats:not(.chats--abierta) .chats__detail { display: none; }
+      .volver { display: inline-flex; }
+      .burbuja { max-width: 90%; }
+    }
   </style>
 </head>
 <body>
@@ -39,7 +86,15 @@
   </section>
 
   <!-- PANEL -->
-  <section id="panel" class="admin hidden">
+  <section id="panel" class="admin admin--wide hidden">
+    <nav class="tabs" role="tablist">
+      <button type="button" class="tab" role="tab" data-tab="disponibilidad" aria-selected="true">📅 Disponibilidad</button>
+      <button type="button" class="tab" role="tab" data-tab="conversaciones" aria-selected="false">💬 Conversaciones</button>
+      <button type="button" class="tab" role="tab" data-tab="avisos" aria-selected="false">🔔 Avisos</button>
+      <button type="button" id="logoutBtn" class="btn btn--ghost btn--sm">Salir</button>
+    </nav>
+
+    <div id="tab-disponibilidad">
     <div class="admin__head">
       <h1>📅 Gestión de disponibilidad</h1>
       <p>Tocá un día para marcarlo <strong>ocupado</strong>. Tocá de nuevo para liberarlo. No te olvides de <strong>Guardar</strong>.</p>
@@ -55,12 +110,46 @@
     <div class="admin__bar">
       <span class="pill" id="counter">0 días ocupados</span>
       <button type="button" id="saveBtn" class="btn btn--primary">💾 Guardar cambios</button>
-      <button type="button" id="logoutBtn" class="btn btn--ghost">Salir</button>
     </div>
     <div id="saveMsg" class="msg" style="text-align:center"></div>
     <p class="hint">Los cambios se ven en la web pública apenas guardás.</p>
+    </div>
+
+    <div id="tab-conversaciones" class="hidden">
+      <div id="chats" class="chats">
+        <div id="chatList" class="chats__list"><p class="vacio">Cargando…</p></div>
+        <div class="chats__detail">
+          <div id="chatEmpty" class="vacio">Elegí una conversación para ver los mensajes.</div>
+          <div id="chatView" class="chat-view" hidden>
+            <div class="detail__head">
+              <div>
+                <button type="button" id="chatBack" class="btn btn--ghost btn--sm volver">‹ Volver</button>
+                <h2 id="chatName"></h2>
+                <div id="chatEstado" class="detail__estado"></div>
+              </div>
+              <div class="detail__acciones">
+                <button type="button" id="chatPause" class="btn btn--ghost btn--sm">⏸ Pausar bot</button>
+                <button type="button" id="chatResume" class="btn btn--ghost btn--sm">▶ Reactivar bot</button>
+              </div>
+            </div>
+            <div id="chatMessages" class="mensajes"></div>
+            <div class="responder">
+              <textarea id="chatInput" maxlength="2000" placeholder="Escribí tu respuesta. Al mandarla, el bot se pausa 12 h en esta charla."></textarea>
+              <button type="button" id="chatSend" class="btn btn--primary">Enviar</button>
+            </div>
+            <div id="chatMsg" class="msg" style="padding:0 1rem 0.6rem"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-avisos" class="hidden">
+      <div class="admin__head"><p>Lo que el bot te pidió que mires: reservas, visitas, consultas que no supo responder.</p></div>
+      <div id="avisoList" class="avisos"><p class="vacio">Cargando…</p></div>
+    </div>
   </section>
 
+  <script src="admin-chats.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>

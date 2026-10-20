@@ -43,4 +43,21 @@ async function marcarLeido(destinatario) {
   }
 }
 
-module.exports = { configurado, enviarTexto, marcarLeido };
+// Nombre de la persona para mostrar en el panel y en los avisos. Si Meta no lo da, null.
+async function obtenerNombre(id, canal) {
+  const campos = canal === "instagram" ? "name,username" : "first_name,last_name";
+  try {
+    const res = await fetch(`https://graph.facebook.com/${API_VERSION}/${encodeURIComponent(id)}?fields=${campos}`, {
+      headers: { Authorization: `Bearer ${process.env.META_PAGE_TOKEN}` },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return null;
+    const p = await res.json();
+    const nombre = canal === "instagram" ? p.name || (p.username && "@" + p.username) : [p.first_name, p.last_name].filter(Boolean).join(" ");
+    return nombre || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+module.exports = { configurado, enviarTexto, marcarLeido, obtenerNombre };
