@@ -3,6 +3,8 @@
 //   POST /webhook/whatsapp                → mensajes de WhatsApp
 //   POST /webhook/meta                    → mensajes de Instagram y Messenger
 // Todos vienen firmados con el App Secret de la misma app.
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const wa = require("./whatsapp");
 const meta = require("./meta");
@@ -14,7 +16,9 @@ const PAUSA_BURBUJA_MS = Number(process.env.BOT_PAUSA_BURBUJA_MS || 1200); // pa
 const PAUSA_HUMANO_MS = Number(process.env.BOT_PAUSA_HORAS || 12) * 3600000;
 const vistos = new Set(); // ids ya procesados (Meta puede reenviar el mismo aviso)
 const enviadosPorBot = new Set(); // ids de mensajes que mandó el bot (para distinguirlos de los de Lauti)
-const pausados = new Map(); // conversación → hasta cuándo el bot no contesta porque escribió Lauti
+// conversación → hasta cuándo el bot no contesta porque escribió Lauti. Se guarda en disco para que un redeploy no la borre.
+const PAUSAS_FILE = path.join(__dirname, "..", "data", "bot", "pausas.json");
+const pausados = new Map(Object.entries(leerPausas()));
 const pendientes = new Map(); // conversación → { canal, destino, textos, nombre, ultimoId, timer }
 const enCurso = new Map(); // conversación → promesa de la respuesta actual (una a la vez por persona)
 
@@ -89,6 +93,20 @@ function yaVisto(id) {
   return false;
 }
 
+function leerPausas() {
+  try {
+    return JSON.parse(fs.readFileSync(PAUSAS_FILE, "utf8"));
+  } catch (e) {
+    return {};
+  }
+}
+
+function guardarPausas() {
+  for (const [id, hasta] of pausados) if (hasta <= Date.now()) pausados.delete(id);
+  fs.mkdirSync(path.dirname(PAUSAS_FILE), { recursive: true });
+  fs.writeFileSync(PAUSAS_FILE, JSON.stringify(Object.fromEntries(pausados), null, 2));
+}
+
 function estaPausado(convId) {
   const hasta = pausados.get(convId);
   if (!hasta) return false;
@@ -97,14 +115,61 @@ function estaPausado(convId) {
   return false;
 }
 
+// Los mensajes que llegan con el bot pausado no se contestan, pero quedan en la charla para que Lauti los vea en el panel.
+function guardarSinResponder(convId, p) {
+  if (!p?.textos?.length) return;
+  clearTimeout(p.timer);
+  const ts = new Date().toISOString();
+  agente.agregarTurnos(convId, p.textos.map((text) => ({ role: "user", text, ts })), { nombre: p.nombre });
+}
+
+// Nunca acorta una pausa más larga (por ejemplo, si Lauti la dejó pausada hasta reactivarla).
+function pausar(convId, ms) {
+  pausados.set(convId, Math.max(pausados.get(convId) || 0, Date.now() + ms));
+  guardarPausas();
+  guardarSinResponder(convId, pendientes.get(convId));
+  pendientes.delete(convId);
+}
+
+function reanudar(convId) {
+  pausados.delete(convId);
+  guardarPausas();
+  agente.quitarSilencio(convId);
+}
+
+function pausadoHasta(convId) {
+  return estaPausado(convId) ? pausados.get(convId) : null;
+}
+
+// Canal y destinatario a partir del id de la conversación: ig_… Instagram, fb_… Messenger, si no WhatsApp.
+function canalDe(convId) {
+  if (convId.startsWith("ig_")) return { canal: "instagram", destino: convId.slice(3) };
+  if (convId.startsWith("fb_")) return { canal: "messenger", destino: convId.slice(3) };
+  return { canal: "whatsapp", destino: convId };
+}
+
+// Lauti responde desde el panel: se manda por el canal de la charla, queda guardado y el bot se pausa ahí.
+async function enviarManual(convId, texto) {
+  const { canal, destino } = canalDe(convId);
+  const ids = await CANALES[canal].enviar(destino, texto);
+  for (const id of ids || []) enviadosPorBot.add(id); // el eco de Meta no tiene que contarse dos veces
+  agente.agregarTurnos(convId, [{ role: "assistant", de: "lauti", text: texto, ts: new Date().toISOString() }]);
+  pausar(convId, PAUSA_HUMANO_MS);
+}
+
 async function procesar(convId) {
   const p = pendientes.get(convId);
   pendientes.delete(convId);
-  if (!p || estaPausado(convId)) return;
+  if (!p) return;
+  if (estaPausado(convId)) return guardarSinResponder(convId, p);
   const canal = CANALES[p.canal];
   const anterior = enCurso.get(convId) || Promise.resolve();
   const actual = anterior.then(async () => {
     try {
+      // Instagram y Messenger no mandan el nombre con el mensaje: se pide una vez y queda en la charla.
+      if (!p.nombre && p.canal !== "whatsapp" && !agente.leerConversacion(convId).nombre) {
+        p.nombre = await meta.obtenerNombre(p.destino, p.canal);
+      }
       await canal.marcarLeido(p.destino, p.ultimoId);
       const respuesta = await agente.responder(p.textos, {
         waId: convId,
@@ -115,7 +180,7 @@ async function procesar(convId) {
         notificarLauti,
       });
       if (respuesta === null) return; // hoy ya no le contesta (spam o fuera de tema)
-      if (estaPausado(convId)) return; // Lauti tomó la charla mientras el bot pensaba
+      if (estaPausado(convId)) return agente.marcarUltimaNoEnviada(convId); // Lauti tomó la charla mientras el bot pensaba
       const burbujas = separarBurbujas(respuesta);
       for (let i = 0; i < burbujas.length; i++) {
         if (i > 0) await new Promise((r) => setTimeout(r, PAUSA_BURBUJA_MS));
@@ -221,8 +286,8 @@ function crearRouter({ leerOcupadas }) {
         const deNuestraApp = process.env.META_APP_ID && String(msg.app_id || "") === process.env.META_APP_ID;
         if (!enviadosPorBot.has(msg.mid) && !deNuestraApp) {
           const convId = prefijo + ev.recipient?.id;
-          pausados.set(convId, Date.now() + PAUSA_HUMANO_MS);
-          pendientes.delete(convId);
+          pausar(convId, PAUSA_HUMANO_MS);
+          if (msg.text) agente.agregarTurnos(convId, [{ role: "assistant", de: "lauti", text: msg.text, ts: new Date().toISOString() }]);
           console.log(`[bot] Lauti respondió a mano en ${convId}: el bot se pausa en esa charla`);
         }
         continue;
@@ -242,4 +307,4 @@ function crearRouter({ leerOcupadas }) {
   return router;
 }
 
-module.exports = { crearRouter, botActivo, metaActivo };
+module.exports = { crearRouter, botActivo, metaActivo, pausar, reanudar, pausadoHasta, canalDe, enviarManual, PAUSA_HUMANO_MS };

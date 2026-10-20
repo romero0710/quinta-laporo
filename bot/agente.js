@@ -43,11 +43,76 @@ function guardarConversacion(conv) {
   fs.writeFileSync(archivoConversacion(conv.waId), JSON.stringify(conv, null, 2));
 }
 
-function registrarAviso(aviso) {
-  let lista = [];
+// Suma turnos a una conversación leyéndola de nuevo del disco, para no pisar lo que se guardó
+// mientras el bot pensaba (mensajes que llegaron con el bot pausado, respuestas de Lauti).
+// `cambios` puede traer nombre o limite actualizados.
+function agregarTurnos(waId, turnos, cambios = {}) {
+  const conv = leerConversacion(waId);
+  if (cambios.nombre) conv.nombre = cambios.nombre;
+  if (cambios.limite) conv.limite = cambios.limite;
+  conv.turnos.push(...turnos);
+  guardarConversacion(conv);
+  return conv;
+}
+
+// La última respuesta del bot quedó sin mandar (Lauti tomó la charla mientras pensaba).
+function marcarUltimaNoEnviada(waId) {
+  const conv = leerConversacion(waId);
+  const ultima = [...conv.turnos].reverse().find((t) => t.role === "assistant" && !t.de);
+  if (ultima) {
+    ultima.noEnviado = true;
+    guardarConversacion(conv);
+  }
+}
+
+// Resumen de todas las conversaciones, la más reciente primero (para el panel).
+function listarConversaciones() {
+  let archivos = [];
   try {
-    lista = JSON.parse(fs.readFileSync(AVISOS_FILE, "utf8"));
-  } catch (e) { /* primera vez */ }
+    archivos = fs.readdirSync(CONV_DIR).filter((f) => f.endsWith(".json"));
+  } catch (e) {
+    return [];
+  }
+  return archivos
+    .map((f) => {
+      try {
+        return JSON.parse(fs.readFileSync(path.join(CONV_DIR, f), "utf8"));
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter((c) => c && c.waId)
+    .map((c) => {
+      const ultimo = c.turnos.at(-1) || {};
+      return {
+        id: c.waId,
+        nombre: c.nombre || null,
+        ultimo: { de: ultimo.de || ultimo.role || null, texto: (ultimo.text || "").slice(0, 120), ts: ultimo.ts || null },
+        silenciado: c.limite?.dia === diaArgentina() ? c.limite.silenciado || null : null,
+      };
+    })
+    .sort((a, b) => String(b.ultimo.ts || "").localeCompare(String(a.ultimo.ts || "")));
+}
+
+// Vuelve a dejar que el bot conteste hoy en una charla que se calló por spam o fuera de tema.
+function quitarSilencio(waId) {
+  const conv = leerConversacion(waId);
+  if (conv.limite?.silenciado) {
+    conv.limite = { dia: diaArgentina(), mensajes: 0, silenciado: null };
+    guardarConversacion(conv);
+  }
+}
+
+function leerAvisos() {
+  try {
+    return JSON.parse(fs.readFileSync(AVISOS_FILE, "utf8"));
+  } catch (e) {
+    return []; // primera vez
+  }
+}
+
+function registrarAviso(aviso) {
+  const lista = leerAvisos();
   lista.push(aviso);
   fs.mkdirSync(path.dirname(AVISOS_FILE), { recursive: true });
   fs.writeFileSync(AVISOS_FILE, JSON.stringify(lista.slice(-500), null, 2));
@@ -119,7 +184,7 @@ async function avisar(ctx, motivo, resumen) {
     waId: ctx.waId,
     canal: ctx.canal || "WhatsApp",
     contacto: ctx.contacto || "",
-    nombre: ctx.nombre || null,
+    nombre: ctx.nombre || ctx.conv?.nombre || null,
     motivo,
     resumen,
   };
@@ -194,13 +259,17 @@ async function responder(textosNuevos, ctx) {
 
   const hoy = diaArgentina();
   if (!conv.limite || conv.limite.dia !== hoy) conv.limite = { dia: hoy, mensajes: 0, silenciado: null };
-  if (conv.limite.silenciado) return null;
+  if (conv.limite.silenciado) {
+    agregarTurnos(ctx.waId, [{ role: "user", text: textoUsuario, ts: new Date().toISOString() }], { nombre: conv.nombre });
+    return null;
+  }
   conv.limite.mensajes = (conv.limite.mensajes || 0) + textosNuevos.length;
   if (conv.limite.mensajes > LIMITE_DIARIO) {
     silenciar(conv, "límite de mensajes");
-    conv.turnos.push({ role: "user", text: textoUsuario, ts: new Date().toISOString() });
-    conv.turnos.push({ role: "assistant", text: AVISO_LIMITE, ts: new Date().toISOString() });
-    guardarConversacion(conv);
+    agregarTurnos(ctx.waId, [
+      { role: "user", text: textoUsuario, ts: new Date().toISOString() },
+      { role: "assistant", text: AVISO_LIMITE, ts: new Date().toISOString() },
+    ], { nombre: conv.nombre, limite: conv.limite });
     console.log(`[bot] ${ctx.waId} pasó los ${LIMITE_DIARIO} mensajes de hoy: el bot se calla hasta mañana`);
     await avisar(ctx, "límite de mensajes", `Mandó más de ${LIMITE_DIARIO} mensajes hoy y el bot dejó de responderle hasta mañana. Último: "${textoUsuario.slice(0, 200)}"`);
     return AVISO_LIMITE;
@@ -211,13 +280,19 @@ async function responder(textosNuevos, ctx) {
   // (la API solo acepta mensajes de sistema después de uno del usuario).
   const messages = [];
   for (const t of conv.turnos) {
+    if (t.noEnviado) continue; // respuesta que el bot armó pero no mandó porque Lauti tomó la charla
     if (!messages.length && t.role !== "user") continue; // la API pide que el primer mensaje sea del usuario
     if (t.role === "assistant" && t.acciones?.length && messages.at(-1)?.role === "user") {
       messages.push({ role: "system", content: `Para la respuesta que sigue el bot usó sus herramientas de verdad: ${t.acciones.join("; ")}. Ya está hecho: no lo repitas ni lo desmientas.` });
     }
-    messages.push({ role: t.role, content: t.text });
+    // Seguidos del mismo lado (mensajes que llegaron con el bot pausado, o Lauti que escribió varias veces)
+    // van juntos en un solo mensaje.
+    const previo = messages.at(-1);
+    if (previo?.role === t.role) previo.content += "\n\n" + t.text;
+    else messages.push({ role: t.role, content: t.text });
   }
-  messages.push({ role: "user", content: textoUsuario });
+  if (messages.at(-1)?.role === "user") messages.at(-1).content += "\n\n" + textoUsuario;
+  else messages.push({ role: "user", content: textoUsuario });
   const canal = ctx.canal || "WhatsApp";
   messages.push({ role: "system", content: `Hoy es ${fechaHoyArgentina()} (hora de Argentina). La persona escribe por ${canal}.` +
     (canal === "WhatsApp" ? "" : " Acá no se ve la negrita con asteriscos: escribí texto plano.") +
@@ -276,10 +351,11 @@ async function responder(textosNuevos, ctx) {
     respuestaFinal = "Dame un momento que lo reviso y te respondo.";
   }
 
-  conv.turnos.push({ role: "user", text: textoUsuario, ts: new Date().toISOString() });
-  conv.turnos.push({ role: "assistant", text: respuestaFinal, acciones: acciones.length ? acciones : undefined, ts: new Date().toISOString() });
-  guardarConversacion(conv);
+  agregarTurnos(ctx.waId, [
+    { role: "user", text: textoUsuario, ts: new Date().toISOString() },
+    { role: "assistant", text: respuestaFinal, acciones: acciones.length ? acciones : undefined, ts: new Date().toISOString() },
+  ], { nombre: conv.nombre, limite: conv.limite });
   return respuestaFinal;
 }
 
-module.exports = { responder, leerConversacion };
+module.exports = { responder, leerConversacion, agregarTurnos, marcarUltimaNoEnviada, listarConversaciones, quitarSilencio, leerAvisos };

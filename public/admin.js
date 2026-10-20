@@ -2,7 +2,6 @@
 (function () {
   const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
   const DOW = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
-  const KEY = "quinta_admin_pass";
 
   const loginSec = document.getElementById("login");
   const panelSec = document.getElementById("panel");
@@ -15,7 +14,6 @@
   const saveMsg = document.getElementById("saveMsg");
   const counter = document.getElementById("counter");
 
-  let password = sessionStorage.getItem(KEY) || "";
   let occupied = new Set();
   const now = new Date();
   let viewYear = now.getFullYear();
@@ -47,7 +45,7 @@
     try {
       const res = await fetch("/api/occupied", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer " + password },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ occupied: [...occupied] }),
       });
       if (res.status === 429) { saveMsg.textContent = "Demasiados intentos. Probá de nuevo en 15 minutos."; saveMsg.className = "msg msg--error"; return; }
@@ -106,11 +104,39 @@
     updateCounter();
   }
 
+  // Pestañas: Disponibilidad, Conversaciones y Avisos
+  const tabs = document.querySelectorAll("[data-tab]");
+  function mostrarTab(nombre) {
+    tabs.forEach((t) => t.setAttribute("aria-selected", String(t.dataset.tab === nombre)));
+    for (const t of ["disponibilidad", "conversaciones", "avisos"]) {
+      document.getElementById("tab-" + t).classList.toggle("hidden", t !== nombre);
+    }
+    window.QLPChats.refrescar(nombre);
+  }
+  tabs.forEach((t) => t.addEventListener("click", () => mostrarTab(t.dataset.tab)));
+
+  function salir() {
+    window.QLPChats.detener();
+    panelSec.classList.add("hidden");
+    loginSec.classList.remove("hidden");
+    passInput.value = "";
+  }
+
+  window.QLPChats.iniciar({
+    mostrarTab,
+    onUnauthorized: () => {
+      salir();
+      loginMsg.textContent = "Sesión vencida, volvé a entrar.";
+      loginMsg.className = "msg msg--error";
+    },
+  });
+
   async function enterPanel() {
     loginSec.classList.add("hidden");
     panelSec.classList.remove("hidden");
     await loadOccupied();
     render();
+    mostrarTab("disponibilidad");
   }
 
   loginBtn.addEventListener("click", async () => {
@@ -120,8 +146,7 @@
     loginMsg.className = "msg";
     const status = await doLogin(pass);
     if (status === 200) {
-      password = pass;
-      sessionStorage.setItem(KEY, pass);
+      passInput.value = "";
       loginMsg.textContent = "";
       enterPanel();
     } else if (status === 429) {
@@ -135,16 +160,12 @@
   passInput.addEventListener("keydown", (e) => { if (e.key === "Enter") loginBtn.click(); });
 
   saveBtn.addEventListener("click", save);
-  logoutBtn.addEventListener("click", () => {
-    sessionStorage.removeItem(KEY);
-    password = "";
-    panelSec.classList.add("hidden");
-    loginSec.classList.remove("hidden");
-    passInput.value = "";
+  logoutBtn.addEventListener("click", async () => {
+    await fetch("/api/logout", { method: "POST" }).catch(() => {});
+    salir();
   });
 
-  // Auto-login si ya hay contraseña guardada en la sesión
-  if (password) {
-    doLogin(password).then((status) => { if (status === 200) enterPanel(); else sessionStorage.removeItem(KEY); });
-  }
+  // Si ya hay una sesión abierta (cookie del servidor), entra directo. La contraseña nunca se guarda en el navegador.
+  sessionStorage.removeItem("quinta_admin_pass"); // la guardaba la versión anterior del panel
+  fetch("/api/sesion", { cache: "no-store" }).then((res) => { if (res.ok) enterPanel(); }).catch(() => {});
 })();
