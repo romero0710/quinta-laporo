@@ -72,11 +72,12 @@ async function marcarLeido(messageId) {
   }
 }
 
-async function graph(metodo, ruta) {
+async function graph(metodo, ruta, body) {
   const { token } = config();
   const res = await fetch(`https://graph.facebook.com/${API_VERSION}/${ruta}`, {
     method: metodo,
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json.error?.message || `HTTP ${res.status}`);
@@ -88,8 +89,23 @@ async function graph(metodo, ruta) {
 async function diagnostico() {
   const { phoneNumberId } = config();
   try {
-    const n = await graph("GET", `${phoneNumberId}?fields=display_phone_number,verified_name`);
+    const n = await graph("GET", `${phoneNumberId}?fields=display_phone_number,verified_name,platform_type`);
     console.log(`[bot] token OK, número ${n.display_phone_number} (${n.verified_name})`);
+    // Un número real recién agregado hay que registrarlo en la Cloud API con un PIN de 6 dígitos
+    // (WHATSAPP_PIN en Easypanel). Se hace una sola vez: si ya está registrado no se repite.
+    if (n.platform_type && n.platform_type !== "CLOUD_API") {
+      const pin = process.env.WHATSAPP_PIN;
+      if (!/^\d{6}$/.test(pin || "")) {
+        console.warn("[bot] el número no está registrado en la Cloud API: cargá WHATSAPP_PIN (6 dígitos) en Easypanel y reiniciá");
+      } else {
+        try {
+          await graph("POST", `${phoneNumberId}/register`, { messaging_product: "whatsapp", pin });
+          console.log("[bot] número registrado en la Cloud API");
+        } catch (e) {
+          console.warn("[bot] no se pudo registrar el número:", e.message);
+        }
+      }
+    }
   } catch (e) {
     console.warn("[bot] el token o el WHATSAPP_PHONE_NUMBER_ID no funcionan:", e.message);
     return;
