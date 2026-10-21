@@ -6,9 +6,11 @@
 //   POST /api/admin/conversaciones/:id/pausar    { horas } → el bot no contesta en esa charla
 //   POST /api/admin/conversaciones/:id/reanudar  → el bot vuelve a contestar
 //   GET  /api/admin/avisos                       → últimos avisos del bot para Lauti
+//   GET  /api/admin/copia                        → descarga una copia de seguridad de todo data/
 const express = require("express");
 const agente = require("./agente");
 const bot = require("./index");
+const { armarCopia, diaArgentina } = require("../lib/copias");
 
 const ID_RE = /^(ig_|fb_)?\d{5,30}$/;
 const MAX_TEXTO = 2000;
@@ -97,6 +99,11 @@ function crearPanelRouter(requiereSesion) {
 
   router.get("/api/admin/avisos", (req, res) => {
     res.json({ ok: true, avisos: agente.leerAvisos().slice(-50).reverse() });
+  });
+
+  router.get("/api/admin/copia", (req, res) => {
+    res.set("Content-Disposition", `attachment; filename="quinta-copia-${diaArgentina()}.json"`);
+    res.type("application/json").send(JSON.stringify(armarCopia(), null, 1));
   });
 
   return router;
