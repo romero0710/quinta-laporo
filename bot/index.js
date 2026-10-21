@@ -92,6 +92,12 @@ function separarBurbujas(texto) {
   return [...partes.slice(0, MAX_BURBUJAS - 1), partes.slice(MAX_BURBUJAS - 1).join("\n\n")];
 }
 
+// Un "me gusta" (👍 de Messenger, ❤️ de Instagram) o un sticker: es un cierre o un ok, no hace falta contestar.
+function esSticker(msg) {
+  if (msg.sticker_id) return true;
+  return msg.attachments.every((a) => a.type === "like_heart" || a.payload?.sticker_id);
+}
+
 function yaVisto(id) {
   if (!id) return false;
   if (vistos.has(id)) return true;
@@ -301,6 +307,7 @@ function crearRouter({ leerOcupadas }) {
         const nombres = Object.fromEntries((value.contacts || []).map((c) => [c.wa_id, c.profile?.name]));
         for (const msg of value.messages) {
           if (!msg.id || yaVisto(msg.id)) continue;
+          if (msg.type === "sticker" || msg.type === "reaction") continue; // un 👍 o un sticker suelto no pide respuesta
           const texto = textoDeMensaje(msg);
           if (texto === null) {
             wa.enviarTexto(msg.from, "¡Hola! Por ahora solo puedo leer mensajes de texto. ¿Me lo escribís?")
@@ -357,7 +364,7 @@ function crearRouter({ leerOcupadas }) {
       const convId = prefijo + remitente;
       if (msg.text && msg.text.trim()) {
         encolar({ convId, canal, destino: remitente, nombre: null, texto: msg.text.trim(), messageId: msg.mid });
-      } else if (msg.attachments && !estaPausado(convId)) {
+      } else if (msg.attachments && !esSticker(msg) && !estaPausado(convId)) {
         meta.enviarTexto(remitente, "¡Hola! Por ahora solo puedo leer mensajes de texto. ¿Me lo escribís?")
           .catch((e) => console.warn("[bot]", e.message));
       }
