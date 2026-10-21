@@ -358,4 +358,4 @@ async function responder(textosNuevos, ctx) {
   return respuestaFinal;
 }
 
-module.exports = { responder, leerConversacion, agregarTurnos, marcarUltimaNoEnviada, listarConversaciones, quitarSilencio, leerAvisos };
+module.exports = { responder, avisar, leerConversacion, agregarTurnos, marcarUltimaNoEnviada, listarConversaciones, quitarSilencio, leerAvisos };

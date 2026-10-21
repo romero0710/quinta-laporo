@@ -6,6 +6,7 @@ const path = require("path");
 const { calcularDisponibilidad } = require("./lib/precios");
 const bot = require("./bot");
 const { crearPanelRouter } = require("./bot/panel");
+const { iniciarCopias } = require("./lib/copias");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -175,6 +176,13 @@ app.get("/api/disponibilidad", (req, res) => {
   res.status(r.ok ? 200 : 400).json(r);
 });
 
+// Para el monitor externo (UptimeRobot): 200 si todo anda, 503 si la IA del bot está fallando.
+app.get("/api/salud", (req, res) => {
+  const estado = bot.estadoSalud();
+  res.set("Cache-Control", "no-store");
+  res.status(estado.ok ? 200 : 503).json(estado);
+});
+
 // --- Bot de WhatsApp (API oficial de Meta) ---
 app.use(bot.crearRouter({ leerOcupadas: readOccupied }));
 
@@ -217,6 +225,7 @@ app.post("/api/occupied", checkAuth, (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Quinta La Poro escuchando en http://localhost:${PORT}`);
+  iniciarCopias();
   console.log(bot.botActivo() ? "Bot de WhatsApp: activo" : "Bot de WhatsApp: inactivo (faltan variables de entorno o BOT_ACTIVO=no)");
   if (require("./bot/whatsapp").configurado()) require("./bot/whatsapp").diagnostico();
   console.log(bot.metaActivo() ? "Bot de Instagram/Messenger: activo" : "Bot de Instagram/Messenger: inactivo (falta META_PAGE_TOKEN)");

@@ -21,6 +21,13 @@ const PAUSAS_FILE = path.join(__dirname, "..", "data", "bot", "pausas.json");
 const pausados = new Map(Object.entries(leerPausas()));
 const pendientes = new Map(); // conversación → { canal, destino, textos, nombre, ultimoId, timer }
 const enCurso = new Map(); // conversación → promesa de la respuesta actual (una a la vez por persona)
+// Si la IA falla (sin crédito en Anthropic, clave mala, caída): /api/salud da error para que el monitor avise.
+const salud = { ultimoOk: null, ultimoError: null };
+const AVISO_FALLA_MS = 3600000; // a Lauti, como mucho un aviso por hora
+const DISCULPA_MS = 6 * 3600000; // al cliente, como mucho una disculpa cada 6 h por charla
+const DISCULPA = "¡Hola! En este momento no puedo responderte, pero ya le avisé a Lauti y te escribe en un rato.";
+const disculpados = new Map(); // conversación → cuándo se le mandó la disculpa
+let ultimoAvisoFalla = 0;
 
 const CANALES = {
   whatsapp: {
@@ -171,14 +178,21 @@ async function procesar(convId) {
         p.nombre = await meta.obtenerNombre(p.destino, p.canal);
       }
       await canal.marcarLeido(p.destino, p.ultimoId);
-      const respuesta = await agente.responder(p.textos, {
-        waId: convId,
-        canal: canal.nombre,
-        contacto: canal.contacto(p.destino),
-        nombre: p.nombre,
-        leerOcupadas: procesar.leerOcupadas,
-        notificarLauti,
-      });
+      let respuesta;
+      try {
+        respuesta = await agente.responder(p.textos, {
+          waId: convId,
+          canal: canal.nombre,
+          contacto: canal.contacto(p.destino),
+          nombre: p.nombre,
+          leerOcupadas: procesar.leerOcupadas,
+          notificarLauti,
+        });
+      } catch (e) {
+        await fallaIA(convId, p, canal, e);
+        return;
+      }
+      salud.ultimoOk = Date.now();
       if (respuesta === null) return; // hoy ya no le contesta (spam o fuera de tema)
       if (estaPausado(convId)) return agente.marcarUltimaNoEnviada(convId); // Lauti tomó la charla mientras el bot pensaba
       const burbujas = separarBurbujas(respuesta);
@@ -196,6 +210,37 @@ async function procesar(convId) {
   enCurso.set(convId, actual);
   await actual;
   if (enCurso.get(convId) === actual) enCurso.delete(convId);
+}
+
+// La IA no pudo responder: el mensaje del cliente queda guardado, se le pide disculpas y se le avisa a Lauti.
+async function fallaIA(convId, p, canal, e) {
+  console.error("[bot] la IA no pudo responder a", convId, e?.status || "", e?.message || e);
+  salud.ultimoError = { ts: Date.now(), detalle: String(e?.message || e).slice(0, 300) };
+  guardarSinResponder(convId, p);
+  if (Date.now() - (disculpados.get(convId) || 0) > DISCULPA_MS) {
+    disculpados.set(convId, Date.now());
+    try {
+      const ids = await canal.enviar(p.destino, DISCULPA);
+      for (const id of ids || []) enviadosPorBot.add(id);
+      agente.agregarTurnos(convId, [{ role: "assistant", text: DISCULPA, ts: new Date().toISOString() }]);
+    } catch (err) {
+      console.warn("[bot] tampoco se pudo mandar la disculpa:", err.message);
+    }
+  }
+  if (Date.now() - ultimoAvisoFalla > AVISO_FALLA_MS) {
+    ultimoAvisoFalla = Date.now();
+    const sinCredito = /credit balance|billing/i.test(String(e?.message));
+    await agente.avisar({ waId: convId, canal: canal.nombre, contacto: canal.contacto(p.destino), nombre: p.nombre, notificarLauti },
+      "bot sin responder",
+      (sinCredito ? "Se terminó el crédito de Anthropic: cargá saldo en platform.claude.com (Billing). " : `La IA dio error (${salud.ultimoError.detalle}). `) +
+      "El bot no está contestando; esta persona recibió una disculpa y espera tu respuesta.");
+  }
+}
+
+// Para el monitor externo: 200 si el servidor anda y la IA respondió bien la última vez, 503 si la última vez falló.
+function estadoSalud() {
+  const fallando = Boolean(salud.ultimoError && salud.ultimoError.ts > (salud.ultimoOk || 0));
+  return { ok: !fallando, ia: fallando ? "fallando" : salud.ultimoOk ? "ok" : "sin mensajes desde el arranque" };
 }
 
 function encolar({ convId, canal, destino, nombre, texto, messageId }) {
@@ -307,4 +352,4 @@ function crearRouter({ leerOcupadas }) {
   return router;
 }
 
-module.exports = { crearRouter, botActivo, metaActivo, pausar, reanudar, pausadoHasta, canalDe, enviarManual, PAUSA_HUMANO_MS };
+module.exports = { crearRouter, estadoSalud, botActivo, metaActivo, pausar, reanudar, pausadoHasta, canalDe, enviarManual, PAUSA_HUMANO_MS };
