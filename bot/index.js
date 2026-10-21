@@ -212,6 +212,13 @@ async function procesar(convId) {
   if (enCurso.get(convId) === actual) enCurso.delete(convId);
 }
 
+// ¿La persona escribió en esta charla dentro de los últimos `ms`? (incluye mensajes que todavía esperan respuesta)
+function clienteEscribioHace(convId, ms) {
+  if (pendientes.has(convId)) return true;
+  const ultimo = agente.leerConversacion(convId).turnos.filter((t) => t.role === "user").at(-1);
+  return Boolean(ultimo?.ts && Date.now() - Date.parse(ultimo.ts) < ms);
+}
+
 // La IA no pudo responder: el mensaje del cliente queda guardado, se le pide disculpas y se le avisa a Lauti.
 async function fallaIA(convId, p, canal, e) {
   console.error("[bot] la IA no pudo responder a", convId, e?.status || "", e?.message || e);
@@ -331,6 +338,14 @@ function crearRouter({ leerOcupadas }) {
         const deNuestraApp = process.env.META_APP_ID && String(msg.app_id || "") === process.env.META_APP_ID;
         if (!enviadosPorBot.has(msg.mid) && !deNuestraApp) {
           const convId = prefijo + ev.recipient?.id;
+          // El saludo automático de un anuncio ("¡Hola! ¿Cómo podemos ayudarte?") también llega como eco,
+          // pero sale antes de que la persona escriba. Lauti solo puede contestar a alguien que escribió
+          // hace menos de 24 h, así que un eco sin mensaje reciente del cliente es automático: no pausa.
+          if (!clienteEscribioHace(convId, 24 * 3600000)) {
+            if (msg.text) agente.agregarTurnos(convId, [{ role: "assistant", de: "anuncio", text: msg.text, ts: new Date().toISOString() }]);
+            console.log(`[bot] mensaje automático de la página en ${convId} (saludo de anuncio): el bot sigue activo`);
+            continue;
+          }
           pausar(convId, PAUSA_HUMANO_MS);
           if (msg.text) agente.agregarTurnos(convId, [{ role: "assistant", de: "lauti", text: msg.text, ts: new Date().toISOString() }]);
           console.log(`[bot] Lauti respondió a mano en ${convId}: el bot se pausa en esa charla`);
