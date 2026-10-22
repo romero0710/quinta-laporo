@@ -118,6 +118,7 @@ Después abrir http://localhost:8791
 - Cambiar ADMIN_PASSWORD cuando quiera (editar env en Easypanel + redeploy).
 
 ## Log
+- 2026-10-22: La ubicación solo se menciona si la preguntan o si creen que la quinta está en otra provincia (en una burbuja corta); antes la decía en el saludo.
 - 2026-10-22: El bot da el precio base ($350.000 semana / $400.000 finde y feriados, sacado de lib/precios.js) apenas preguntan el precio, antes de pedir fecha y personas. Dice que la quinta está en Exaltación de la Cruz, zona norte de Buenos Aires, y aclara si creen que está en otra provincia.
 - 2026-10-21: El saludo automático de los anuncios de Messenger/Instagram ya no pausa el bot. Llega como eco de la página igual que una respuesta de Lauti; ahora un eco sin mensaje del cliente en las últimas 24 h se toma como automático (queda en el panel como "Saludo del anuncio").
 - 2026-10-21: Copias de seguridad y aviso de caída. Copia diaria de data/ en data/copias/ (últimas 14) y botón "💾 Copia" en el panel para bajarla. GET /api/salud (para UptimeRobot): 200 si anda, 503 si la última respuesta de la IA falló. Si la IA falla (por ejemplo sin crédito en Anthropic) el mensaje del cliente queda guardado, se le manda una disculpa (una cada 6 h por charla) y se avisa a Lauti (uno por hora).
