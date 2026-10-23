@@ -249,6 +249,17 @@ async function ejecutarHerramienta(bloque, ctx) {
   return { ok: false, error: `Herramienta desconocida: ${bloque.name}` };
 }
 
+// A veces el modelo deja pegada una etiqueta interna (por ejemplo "antml:reasoning_effort>5</reasoning_effort>").
+// Un cliente nunca tiene que verla: se borra cualquier renglón con etiquetas de ese estilo.
+function limpiarTexto(texto) {
+  return texto
+    .split("\n")
+    .filter((r) => !/<\/?[a-z_]+(:[a-z_]+)?[^<>]*>|\b[a-z]+:[a-z_]+>/i.test(r))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 // Recibe uno o más textos nuevos de la persona y devuelve la respuesta del bot,
 // o null si hoy el bot ya no le contesta a esta persona.
 async function responder(textosNuevos, ctx) {
@@ -287,9 +298,11 @@ async function responder(textosNuevos, ctx) {
     }
     // Seguidos del mismo lado (mensajes que llegaron con el bot pausado, o Lauti que escribió varias veces)
     // van juntos en un solo mensaje.
+    const texto = t.role === "assistant" ? limpiarTexto(t.text) : t.text; // respuestas viejas que salieron con etiquetas
+    if (!texto) continue;
     const previo = messages.at(-1);
-    if (previo?.role === t.role) previo.content += "\n\n" + t.text;
-    else messages.push({ role: t.role, content: t.text });
+    if (previo?.role === t.role) previo.content += "\n\n" + texto;
+    else messages.push({ role: t.role, content: texto });
   }
   if (messages.at(-1)?.role === "user") messages.at(-1).content += "\n\n" + textoUsuario;
   else messages.push({ role: "user", content: textoUsuario });
@@ -317,7 +330,7 @@ async function responder(textosNuevos, ctx) {
       break;
     }
 
-    const textos = response.content.filter((b) => b.type === "text").map((b) => b.text.trim()).filter(Boolean);
+    const textos = response.content.filter((b) => b.type === "text").map((b) => limpiarTexto(b.text)).filter(Boolean);
     const herramientas = response.content.filter((b) => b.type === "tool_use");
 
     if (response.stop_reason !== "tool_use" || herramientas.length === 0) {

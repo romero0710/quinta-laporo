@@ -118,6 +118,7 @@ Después abrir http://localhost:8791
 - Cambiar ADMIN_PASSWORD cuando quiera (editar env en Easypanel + redeploy).
 
 ## Log
+- 2026-10-23: Filtro limpiarTexto en bot/agente.js: borra renglones con etiquetas internas del modelo (salió "antml:reasoning_effort>5</reasoning_effort>" en una respuesta) antes de mandar y al releer el historial.
 - 2026-10-22: La ubicación solo se menciona si la preguntan o si creen que la quinta está en otra provincia (en una burbuja corta); antes la decía en el saludo.
 - 2026-10-22: El bot da el precio base ($350.000 semana / $400.000 finde y feriados, sacado de lib/precios.js) apenas preguntan el precio, antes de pedir fecha y personas. Dice que la quinta está en Exaltación de la Cruz, zona norte de Buenos Aires, y aclara si creen que está en otra provincia.
 - 2026-10-21: El saludo automático de los anuncios de Messenger/Instagram ya no pausa el bot. Llega como eco de la página igual que una respuesta de Lauti; ahora un eco sin mensaje del cliente en las últimas 24 h se toma como automático (queda en el panel como "Saludo del anuncio").
