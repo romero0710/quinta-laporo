@@ -118,6 +118,7 @@ Después abrir http://localhost:8791
 - Cambiar ADMIN_PASSWORD cuando quiera (editar env en Easypanel + redeploy).
 
 ## Log
+- 2026-10-24: Depósito de garantía al ingresar sube de $100.000 a $300.000 (se devuelve si todo queda bien).
 - 2026-10-23: Las fiestas se explican en una línea ("Navidad del 24 al 27 por $3.000.000, Año Nuevo del 31 al 3 por $3.000.000"), sin horarios ni seña salvo que pregunten.
 - 2026-10-23: Filtro limpiarTexto en bot/agente.js: borra renglones con etiquetas internas del modelo (salió "antml:reasoning_effort>5</reasoning_effort>" en una respuesta) antes de mandar y al releer el historial.
 - 2026-10-22: La ubicación solo se menciona si la preguntan o si creen que la quinta está en otra provincia (en una burbuja corta); antes la decía en el saludo.

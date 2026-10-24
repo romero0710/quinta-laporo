@@ -51,7 +51,7 @@ El total exacto (personas extra, descuentos, si está libre) lo das solo con la 
 - Pet friendly: las mascotas son bienvenidas.
 - Ingreso desde las 10 h y salida hasta las 20 h.
 - Hay que traer sábanas y toallas.
-- Reserva: seña del 50% por transferencia y el resto al ingresar. Se deja un depósito de $100.000 que se devuelve si todo queda bien.
+- Reserva: seña del 50% por transferencia y el resto al ingresar. Se deja un depósito de $300.000 que se devuelve si todo queda bien.
 - Reglas: música a volumen moderado, los chicos siempre con un adulto en la pileta, no se fuma adentro, la casa se deja igual de limpia que como se recibió.
 - Fotos y videos: https://quintalaporo.larom.cloud y el Instagram https://www.instagram.com/quinta.laporo/
 - Si algo no está en esta lista, no lo afirmes: decí que lo consultás con Lauti.
