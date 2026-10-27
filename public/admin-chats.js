@@ -16,7 +16,7 @@
   const chatMsg = $("chatMsg");
   const avisoListEl = $("avisoList");
 
-  const QUIEN = { cliente: "Cliente", bot: "Bot", lauti: "Vos", anuncio: "Saludo del anuncio" };
+  const QUIEN = { cliente: "Cliente", bot: "Bot", lauti: "Vos", anuncio: "Saludo del anuncio", auto: "Bot (pidió que escriba)" };
   const PAUSA_HORAS = 24 * 30; // "Pausar bot" deja la charla en tus manos hasta que la reactives (máx. 30 días)
 
   let abierta = null; // id de la conversación abierta

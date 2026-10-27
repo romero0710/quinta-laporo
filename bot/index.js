@@ -218,6 +218,23 @@ async function procesar(convId) {
   if (enCurso.get(convId) === actual) enCurso.delete(convId);
 }
 
+// Llegó una foto o un audio sin texto. Se espera un poco: si en ese rato también escribió (el texto y el
+// adjunto suelen llegar por separado), el bot contesta el texto y no hace falta pedirle nada.
+// Queda guardado como respuesta automática ("auto"), que el panel muestra en naranja.
+const PEDIR_TEXTO = "¡Hola! Por ahora solo puedo leer mensajes de texto. ¿Me lo escribís?";
+function pedirTexto(convId, canal, destino) {
+  setTimeout(async () => {
+    if (pendientes.has(convId) || enCurso.has(convId) || estaPausado(convId) || clienteEscribioHace(convId, 2 * 60000)) return;
+    try {
+      const ids = await CANALES[canal].enviar(destino, PEDIR_TEXTO);
+      for (const id of ids || []) enviadosPorBot.add(id); // su eco no tiene que contarse como si escribiera Lauti
+      agente.agregarTurnos(convId, [{ role: "assistant", de: "auto", text: PEDIR_TEXTO, ts: new Date().toISOString() }]);
+    } catch (e) {
+      console.warn("[bot] no se pudo pedir que escriba:", e.message);
+    }
+  }, ESPERA_MS + 3000);
+}
+
 // ¿La persona escribió en esta charla dentro de los últimos `ms`? (incluye mensajes que todavía esperan respuesta)
 function clienteEscribioHace(convId, ms) {
   if (pendientes.has(convId)) return true;
@@ -310,8 +327,8 @@ function crearRouter({ leerOcupadas }) {
           if (msg.type === "sticker" || msg.type === "reaction") continue; // un 👍 o un sticker suelto no pide respuesta
           const texto = textoDeMensaje(msg);
           if (texto === null) {
-            wa.enviarTexto(msg.from, "¡Hola! Por ahora solo puedo leer mensajes de texto. ¿Me lo escribís?")
-              .catch((e) => console.warn("[bot]", e.message));
+            console.log(`[bot] WhatsApp de ${msg.from}: llegó un ${msg.type}, no texto`);
+            if (["image", "audio", "video", "document"].includes(msg.type)) pedirTexto(msg.from, "whatsapp", msg.from);
             continue;
           }
           if (texto.trim()) {
@@ -343,7 +360,7 @@ function crearRouter({ leerOcupadas }) {
         // Mensaje enviado desde la cuenta de la quinta. Si no lo mandó el bot, lo escribió Lauti a mano:
         // el bot se calla en esa charla por un rato para no pisarlo.
         const deNuestraApp = process.env.META_APP_ID && String(msg.app_id || "") === process.env.META_APP_ID;
-        if (!enviadosPorBot.has(msg.mid) && !deNuestraApp) {
+        if (!enviadosPorBot.has(msg.mid) && !deNuestraApp && msg.text !== PEDIR_TEXTO) {
           const convId = prefijo + ev.recipient?.id;
           // El saludo automático de un anuncio ("¡Hola! ¿Cómo podemos ayudarte?") también llega como eco,
           // pero sale antes de que la persona escriba. Lauti solo puede contestar a alguien que escribió
@@ -364,9 +381,12 @@ function crearRouter({ leerOcupadas }) {
       const convId = prefijo + remitente;
       if (msg.text && msg.text.trim()) {
         encolar({ convId, canal, destino: remitente, nombre: null, texto: msg.text.trim(), messageId: msg.mid });
-      } else if (msg.attachments && !esSticker(msg) && !estaPausado(convId)) {
-        meta.enviarTexto(remitente, "¡Hola! Por ahora solo puedo leer mensajes de texto. ¿Me lo escribís?")
-          .catch((e) => console.warn("[bot]", e.message));
+      } else if (msg.attachments && !esSticker(msg)) {
+        const tipos = msg.attachments.map((a) => a.type);
+        console.log(`[bot] ${convId}: llegó un adjunto (${tipos.join(", ")}), no texto`);
+        // Solo fotos, audios, videos y archivos. Lo que Instagram manda junto con un texto (la publicación
+        // o el anuncio al que responde, una vista previa, etc.) no es algo que la persona haya mandado.
+        if (tipos.every((t) => ["image", "audio", "video", "file"].includes(t))) pedirTexto(convId, canal, remitente);
       }
     }
   });
