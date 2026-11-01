@@ -118,6 +118,7 @@ Después abrir http://localhost:8791
 - Cambiar ADMIN_PASSWORD cuando quiera (editar env en Easypanel + redeploy).
 
 ## Log
+- 2026-11-01: Tope de 30 personas para pasar el día (en total, bebés incluidos). /api/disponibilidad devuelve supera_maximo y el bot avisa que no se puede.
 - 2026-10-29: Temporada: solo se alquila hasta TEMPORADA_HASTA (por defecto 2027-03-31, env en Easypanel). /api/disponibilidad devuelve fuera_de_temporada para fechas posteriores y el bot dice que por ahora no toma reservas para tan adelante, solo si las piden.
 - 2026-10-27: "Solo puedo leer texto" ya no pausa el bot ni pisa al texto. Antes salía con cualquier adjunto de Instagram (p. ej. la publicación a la que responde la persona) aunque viniera con texto, y su eco se tomaba como si escribiera Lauti (pausa 12 h). Ahora solo para foto/audio/video/archivo, espera unos segundos por si llega texto, y queda en el panel en naranja como "Bot (pidió que escriba)". El log muestra el tipo de adjunto.
 - 2026-10-24: Depósito de garantía al ingresar sube de $100.000 a $300.000 (se devuelve si todo queda bien).
