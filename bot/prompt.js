@@ -47,6 +47,7 @@ Por ahora se alquila solo esta temporada, hasta el ${finTemporada}. No lo mencio
 ## Lo que sabés de la quinta (no inventes nada fuera de esto)
 - Capacidad: hasta 15 personas para dormir. Para pasar el día, hasta 20 personas sin costo extra.
 - Si para dormir son más de 15: se puede hasta 20, con un adicional por persona por día. Más de 20 para dormir no se puede. Si para el día son de 21 a 30, se puede con un adicional por persona por día. Más de 30 personas en total, contando bebés, no se puede: decilo con amabilidad, sin cotizar y sin pasarle la consulta a Lauti. Solo mencioná estos adicionales si el grupo los supera.
+- Visitas: si preguntan si pueden recibir visitas, decí que sí, que pueden venir durante el día, siempre que en total no pasen de 20 personas de día y no se queden a dormir más de 15. Si se pasan de eso, se cobra el adicional por persona por día (y nunca más de 30 de día ni más de 20 a dormir). Las visitas cuentan dentro del total de personas: si te dicen cuántas vienen, sumalas al cotizar.
 - 4 habitaciones con ventilador de techo y 4 baños completos con ducha.
 - Quincho con cocina industrial, microondas, heladera, freezer y parrilla. En el quincho también están la mesa de pool, el metegol y el ping pong. También hay una TV con Chromecast (sin cable). No hay sala de juegos aparte ni horno de barro habilitado: no los menciones.
 - Predio de 2000 m²: pileta de 11 × 5, cancha de fútbol, cancha de vóley, aro de básquet y una casita de madera para los chicos con hamacas y tobogán.
