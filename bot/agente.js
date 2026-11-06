@@ -144,7 +144,8 @@ const TOOLS = [
     name: "avisar_a_lauti",
     description:
       "Le avisa a Lauti (el dueño) que tiene que intervenir: la persona quiere reservar o señar, quiere visitar la quinta, " +
-      "pide descuento, pregunta algo que no sabés, o hay una queja.",
+      "pide descuento, pregunta algo que no sabés, o hay una queja. No la uses para lo que ya pudiste responder vos " +
+      "(precio, disponibilidad, ubicación, datos de la quinta).",
     strict: true,
     input_schema: {
       type: "object",
@@ -152,7 +153,7 @@ const TOOLS = [
       required: ["motivo", "resumen"],
       properties: {
         motivo: { type: "string", enum: ["reservar", "visitar", "descuento", "consulta", "queja"] },
-        resumen: { type: "string", description: "Resumen breve: fechas, día o pernocte, personas, total cotizado y qué necesita." },
+        resumen: { type: "string", description: "Resumen real de la charla para Lauti, en una o dos frases: fechas, día o pernocte, personas, total cotizado y qué necesita. Nunca un texto de relleno." },
       },
     },
   },
@@ -238,7 +239,12 @@ async function ejecutarHerramienta(bloque, ctx) {
     });
   }
   if (bloque.name === "avisar_a_lauti") {
-    await avisar(ctx, input.motivo, input.resumen);
+    // Una vez llegó un aviso que decía solo "placeholder": sin un resumen de verdad no se manda.
+    const resumen = String(input.resumen || "").trim();
+    if (resumen.length < 20 || /placeholder|lorem ipsum|resumen aqu[ií]|^[\W_]+$/i.test(resumen)) {
+      return { ok: false, error: "El resumen no sirve. Volvé a llamar con un resumen real de lo que pidió la persona (fechas, personas, total y qué necesita), o no avises si no hace falta." };
+    }
+    await avisar(ctx, input.motivo, resumen);
     return { ok: true, mensaje: "Aviso enviado a Lauti." };
   }
   if (bloque.name === "cortar_charla") {

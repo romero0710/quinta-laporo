@@ -118,6 +118,7 @@ Después abrir http://localhost:8791
 - Cambiar ADMIN_PASSWORD cuando quiera (editar env en Easypanel + redeploy).
 
 ## Log
+- 2026-11-06: avisar_a_lauti rechaza resúmenes vacíos o de relleno (llegó un aviso que decía "placeholder") y el bot ya no avisa por consultas que pudo responder solo.
 - 2026-11-02: El bot responde sobre visitas: sí se pueden recibir de día mientras no pasen de 20 de día y 15 a dormir; si no, adicional por persona.
 - 2026-11-01: Tope de 30 personas para pasar el día (en total, bebés incluidos). /api/disponibilidad devuelve supera_maximo y el bot avisa que no se puede.
 - 2026-10-29: Temporada: solo se alquila hasta TEMPORADA_HASTA (por defecto 2027-03-31, env en Easypanel). /api/disponibilidad devuelve fuera_de_temporada para fechas posteriores y el bot dice que por ahora no toma reservas para tan adelante, solo si las piden.
