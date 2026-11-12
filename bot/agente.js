@@ -315,7 +315,10 @@ async function responder(textosNuevos, ctx) {
   const canal = ctx.canal || "WhatsApp";
   messages.push({ role: "system", content: `Hoy es ${fechaHoyArgentina()} (hora de Argentina). La persona escribe por ${canal}.` +
     (canal === "WhatsApp" ? "" : " Acá no se ve la negrita con asteriscos: escribí texto plano.") +
-    (conv.nombre ? ` Figura como "${conv.nombre}".` : "") });
+    (conv.nombre ? ` Figura como "${conv.nombre}".` : "") +
+    // Primera respuesta del bot en esta charla (el saludo automático de un anuncio no cuenta).
+    (conv.turnos.some((t) => t.role === "assistant" && !t.noEnviado && t.de !== "anuncio") ? "" :
+      " Es tu primera respuesta en esta charla: en la primera burbuja presentate como el asistente virtual con IA de la Quinta La Poro, en una frase corta, y seguí con la respuesta.") });
 
   let respuestaFinal = "";
   const acciones = [];
