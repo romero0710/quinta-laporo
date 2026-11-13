@@ -118,6 +118,7 @@ Después abrir http://localhost:8791
 - Cambiar ADMIN_PASSWORD cuando quiera (editar env en Easypanel + redeploy).
 
 ## Log
+- 2026-11-13: el bot sabe que no hay aire acondicionado, solo ventilador de techo en todas las habitaciones.
 - 2026-11-12: En la primera respuesta de cada charla el bot se presenta como asistente virtual con IA (nota de sistema cuando todavía no hay respuestas del bot).
 - 2026-11-12: Cuando alguien ya decidió señar, el bot le pasa el WhatsApp personal de Lauti (11 2337-2986) además de avisarle. Solo para señar: preguntas sobre la seña o visitas siguen por el mismo chat.
 - 2026-11-06: avisar_a_lauti rechaza resúmenes vacíos o de relleno (llegó un aviso que decía "placeholder") y el bot ya no avisa por consultas que pudo responder solo.
