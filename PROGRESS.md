@@ -118,6 +118,7 @@ Después abrir http://localhost:8791
 - Cambiar ADMIN_PASSWORD cuando quiera (editar env en Easypanel + redeploy).
 
 ## Log
+- 2026-11-23: cotiza pernocte con gente que viene solo de día (personas = total, duermen = los que duermen; extra por lo que pase de 20 presentes o 15 durmiendo, hasta 30 en total). Antes daba error "máximo 20 para dormir".
 - 2026-11-13: el bot sabe que no hay aire acondicionado, solo ventilador de techo en todas las habitaciones.
 - 2026-11-12: En la primera respuesta de cada charla el bot se presenta como asistente virtual con IA (nota de sistema cuando todavía no hay respuestas del bot).
 - 2026-11-12: Cuando alguien ya decidió señar, el bot le pasa el WhatsApp personal de Lauti (11 2337-2986) además de avisarle. Solo para señar: preguntas sobre la seña o visitas siguen por el mismo chat.
