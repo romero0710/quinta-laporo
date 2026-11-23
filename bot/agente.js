@@ -134,7 +134,7 @@ const TOOLS = [
         desde: { type: "string", description: "Primera fecha, formato AAAA-MM-DD" },
         hasta: { type: ["string", "null"], description: "Último día (AAAA-MM-DD), el día de salida. Para dormir es como mínimo el día siguiente a desde; null si es para pasar un solo día" },
         personas: { type: ["integer", "null"], description: "Cantidad total de personas, bebés incluidos; null si todavía no la dijo" },
-        duermen: { type: ["integer", "null"], description: "Solo para Navidad y Año Nuevo: cuántos de ellos se quedan a dormir; null si duermen todos o no lo dijo" },
+        duermen: { type: ["integer", "null"], description: "Con pernocte: cuántos de ellos se quedan a dormir cuando algunos vienen solo de día (máximo 20 durmiendo, 30 en total); null si duermen todos o no lo dijo" },
         menores3: { type: ["integer", "null"], description: "Cuántos son menores de 3 años (no pagan adicional); null si no hay o no lo dijo" },
         pernocte: { type: "boolean", description: "true si se quedan a dormir, false si es para pasar el día" },
       },
